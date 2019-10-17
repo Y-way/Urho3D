@@ -561,7 +561,7 @@ private:
     template <class RandomIteratorT>
     static void ConstructElements(T* dest, RandomIteratorT start, RandomIteratorT end, MoveTag)
     {
-        const unsigned count = end - start;
+        auto count = end - start;
         for (unsigned i = 0; i < count; ++i)
             new(dest + i) T(std::move(*(start + i)));
     }

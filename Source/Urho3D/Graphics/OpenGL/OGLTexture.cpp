@@ -237,11 +237,11 @@ unsigned Texture::GetRowDataSize(int width) const
 
     case COMPRESSED_RGB_PVRTC_4BPPV1_IMG:
     case COMPRESSED_RGBA_PVRTC_4BPPV1_IMG:
-        return ((unsigned)(width + 3) >> 2u) * 8;
+        return (unsigned)(width * 4 + 7) >> 3u;
 
     case COMPRESSED_RGB_PVRTC_2BPPV1_IMG:
     case COMPRESSED_RGBA_PVRTC_2BPPV1_IMG:
-        return ((unsigned)(width + 7) >> 3u) * 8;
+        return (unsigned)(width * 2 + 7) >> 3u;
 
     default:
         return 0;
