@@ -52,7 +52,7 @@ unsigned DecompressData(void* dest, const void* src, unsigned destSize)
     if (!dest || !src || !destSize)
         return 0;
     else
-        return (unsigned)LZ4_decompress_fast((const char*)src, (char*)dest, destSize);
+        return (unsigned)LZ4_decompress_safe((const char*)src, (char*)dest, destSize, destSize);
 }
 
 bool CompressStream(Serializer& dest, Deserializer& src)
@@ -100,7 +100,7 @@ bool DecompressStream(Serializer& dest, Deserializer& src)
     if (src.Read(srcBuffer, srcSize) != srcSize)
         return false;
 
-    LZ4_decompress_fast((const char*)srcBuffer.Get(), (char*)destBuffer.Get(), destSize);
+    LZ4_decompress_safe((const char*)srcBuffer.Get(), (char*)destBuffer.Get(), destSize, destSize);
     return dest.Write(destBuffer, destSize) == destSize;
 }
 
