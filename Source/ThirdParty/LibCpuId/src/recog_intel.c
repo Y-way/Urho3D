@@ -60,6 +60,7 @@ enum _intel_model_t {
 typedef enum _intel_model_t intel_model_t;
 
 const struct match_entry_t cpudb_intel[] = {
+//     F   M   S  EF  EM  #cores  L2$   L3$  BC  ModelBits     ModelCode  Name
 	{ -1, -1, -1, -1, -1,   1,    -1,    -1, NC, 0             ,     0, "Unknown Intel CPU"       },
 	
 	/* i486 */
@@ -107,17 +108,18 @@ const struct match_entry_t cpudb_intel[] = {
 	{  6,  8, -1, -1, -1,   1,    -1,    -1, NC, 0             ,     0, "Pentium III (Coppermine)"},
 	{  6, 10, -1, -1, -1,   1,    -1,    -1, NC, 0             ,     0, "Pentium III (Coppermine)"},
 	{  6, 11, -1, -1, -1,   1,    -1,    -1, NC, 0             ,     0, "Pentium III (Tualatin)"  },
+	{  6, 11, -1, -1, -1,   1,   512,    -1, NC, 0             ,     0, "Pentium III (Tualatin)"  },
 	
 	{  6,  7, -1, -1, -1,   1,    -1,    -1, NC, XEON_         ,     0, "P-III Xeon (Tanner)"     },
 	{  6,  8, -1, -1, -1,   1,    -1,    -1, NC, XEON_         ,     0, "P-III Xeon (Cascades)"   },
 	{  6, 10, -1, -1, -1,   1,    -1,    -1, NC, XEON_         ,     0, "P-III Xeon (Cascades)"   },
 	{  6, 11, -1, -1, -1,   1,    -1,    -1, NC, XEON_         ,     0, "P-III Xeon (Tualatin)"   },
 	
-	{  6,  7, -1, -1, -1,   1,    -1,    -1, NC, CELERON_      ,     0, "P-III Celeron (Katmai)"     },
-	{  6,  8, -1, -1, -1,   1,    -1,    -1, NC, CELERON_      ,     0, "P-III Celeron (Coppermine)" },
-	{  6, 10, -1, -1, -1,   1,    -1,    -1, NC, CELERON_      ,     0, "P-III Celeron (Coppermine)" },
-	{  6, 11, -1, -1, -1,   1,    -1,    -1, NC, CELERON_      ,     0, "P-III Celeron (Tualatin)"   },
-	
+	{  6,  7, -1, -1, -1,   1,   128,    -1, NC, CELERON_      ,     0, "P-III Celeron (Katmai)"     },
+	{  6,  8, -1, -1, -1,   1,   128,    -1, NC, CELERON_      ,     0, "P-III Celeron (Coppermine)" },
+	{  6, 10, -1, -1, -1,   1,   128,    -1, NC, CELERON_      ,     0, "P-III Celeron (Coppermine)" },
+	{  6, 11, -1, -1, -1,   1,   256,    -1, NC, CELERON_      ,     0, "P-III Celeron (Tualatin)"   },
+
 	/* Netburst based (Pentium 4 and later)
 	   classic P4s */
 	{ 15, -1, -1, -1, -1,   1,    -1,    -1, NC, 0             ,     0, "Unknown Pentium 4"       },
@@ -330,6 +332,8 @@ const struct match_entry_t cpudb_intel[] = {
 	{  6, 14, -1, -1, 78,   2,    -1,    -1, NC, CORE_|_M_|_5  ,     0, "Skylake (Core m5)"        },
 	{  6, 14, -1, -1, 78,   2,    -1,    -1, NC, CORE_|_M_|_3  ,     0, "Skylake (Core m3)"        },
 	{  6,  5, -1, -1, 85,   8,    -1,    -1, NC, XEON_,              0, "Skylake (Xeon Scalable)"  },
+	{  6,  5, -1, -1, 85,  -1,    -1,    -1, NC, CORE_|_I_|_9,       0, "Skylake-X (Core i9)"      }, /* 10 to 18 cores */
+	{  6,  5, -1, -1, 85,  -1,    -1,    -1, NC, CORE_|_I_|_7,       0, "Skylake-X (Core i7)"      }, /* 6 to 8 cores */
 
 	/* Kaby Lake CPUs (14nm): */
 	{  6, 14, -1, -1, 158,  4,    -1,    -1, NC, CORE_|_I_|_7  ,     0, "Kaby Lake (Core i7)"      },
@@ -337,7 +341,22 @@ const struct match_entry_t cpudb_intel[] = {
 	{  6, 14, -1, -1, 158,  2,    -1,    -1, NC, CORE_|_I_|_3  ,     0, "Kaby Lake (Core i3)"      },
 	{  6, 14, -1, -1, 158,  2,    -1,    -1, NC, PENTIUM_      ,     0, "Kaby Lake (Pentium)"      },
 	{  6, 14, -1, -1, 158,  2,    -1,    -1, NC, CELERON_      ,     0, "Kaby Lake (Celeron)"      },
-	{  6, 14, -1, -1, 158,  2,    -1,    -1, NC, CORE_|_M_|_3  ,     0, "Kaby Lake (Core m3)"      },
+	{  6, 14, -1, -1, 142,  2,    -1,    -1, NC, CORE_|_I_|_7  ,     0, "Kaby Lake-U (Core i7)"    },
+	{  6, 14, -1, -1, 142,  2,    -1,    -1, NC, CORE_|_I_|_5  ,     0, "Kaby Lake-U (Core i5)"    },
+	{  6, 14, -1, -1, 142,  2,    -1,    -1, NC, CORE_|_I_|_3  ,     0, "Kaby Lake-U (Core i3)"    },
+	{  6, 14, -1, -1, 142,  2,    -1,    -1, NC, PENTIUM_      ,     0, "Kaby Lake-U (Pentium)"    },
+	{  6, 14, -1, -1, 142,  2,    -1,    -1, NC, CELERON_      ,     0, "Kaby Lake-U (Celeron)"    },
+	{  6, 14, -1, -1, 142,  2,    -1,    -1, NC, CORE_|_M_|_3  ,     0, "Kaby Lake-U (Core m3)"    },
+
+	/* Coffee Lake CPUs (14nm): */
+	{  6, 14, -1, -1, 158,  8,    -1,    -1, NC, CORE_|_I_|_9  ,     0, "Coffee Lake (Core i9)"    },
+	{  6, 14, -1, -1, 158,  8,    -1,    -1, NC, CORE_|_I_|_7  ,     0, "Coffee Lake (Core i7)"    },
+	{  6, 14, -1, -1, 158,  6,    -1,    -1, NC, CORE_|_I_|_7  ,     0, "Coffee Lake (Core i7)"    },
+	{  6, 14, -1, -1, 158,  6,    -1,    -1, NC, CORE_|_I_|_5  ,     0, "Coffee Lake (Core i5)"    },
+	{  6, 14, -1, -1, 158,  4,    -1,    -1, NC, CORE_|_I_|_3  ,     0, "Coffee Lake (Core i3)"    },
+	{  6, 14, -1, -1, 158,  2,    -1,    -1, NC, PENTIUM_      ,     0, "Coffee Lake (Pentium)"    },
+	{  6, 14, -1, -1, 158,  2,    -1,    -1, NC, CELERON_      ,     0, "Coffee Lake (Celeron)"    },
+
 
 	/* Itaniums */
 	{  7, -1, -1, -1, -1,   1,    -1,    -1, NC, 0             ,     0, "Itanium"                  },
@@ -664,7 +683,7 @@ static intel_code_and_bits_t get_brand_code_and_bits(struct cpu_id_t* data)
 			bits |= bit_matchtable[i].bit;
 	}
 	
-	if ((i = match_pattern(bs, "Core(TM) [im][357]")) != 0) {
+	if ((i = match_pattern(bs, "Core(TM) [im][3579]")) != 0) {
 		bits |= CORE_;
 		i--;
 		switch (bs[i + 9]) {
@@ -675,6 +694,7 @@ static intel_code_and_bits_t get_brand_code_and_bits(struct cpu_id_t* data)
 			case '3': bits |= _3; break;
 			case '5': bits |= _5; break;
 			case '7': bits |= _7; break;
+			case '9': bits |= _9; break;
 		}
 	}
 	for (i = 0; i < COUNT_OF(matchtable); i++)
