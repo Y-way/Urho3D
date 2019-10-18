@@ -24,8 +24,10 @@
 
 #ifdef URHO3D_IS_BUILDING
 #include "Urho3D.h"
+#include "librevision.h"
 #else
 #include <Urho3D/Urho3D.h>
+#include <Urho3D/librevision.h>
 #endif
 
 namespace Urho3D
@@ -35,7 +37,7 @@ namespace Urho3D
  *
  *  If you are linking to Urho3D dynamically, then it is possible that the
  *  current version will be different than the version you compiled against.
- *  This function returns the current version, while URHO3D_VERSION() is a
+ *  This function returns the current version, while SDL_VERSION() is a
  *  macro that tells you what version you compiled with.
  *
  *  \code

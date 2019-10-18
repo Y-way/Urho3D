@@ -22,7 +22,7 @@
 
 #include "Precompiled.h"
 
-#include "librevision.h"
+#include "LibraryInfo.h"
 
 #include "LibraryInfo.h"
 
