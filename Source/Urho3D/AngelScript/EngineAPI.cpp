@@ -23,89 +23,10 @@
 #include "../Precompiled.h"
 
 #include "../AngelScript/APITemplates.h"
-#include "../Engine/Console.h"
-#include "../Engine/DebugHud.h"
 #include "../Engine/Engine.h"
 
 namespace Urho3D
 {
-
-static Console* GetConsole()
-{
-    return GetScriptContext()->GetSubsystem<Console>();
-}
-
-static void RegisterConsole(asIScriptEngine* engine)
-{
-    RegisterObject<Console>(engine, "Console");
-    engine->RegisterObjectMethod("Console", "void Toggle()", asMETHOD(Console, Toggle), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void UpdateElements()", asMETHOD(Console, UpdateElements), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void CopySelectedRows() const", asMETHOD(Console, CopySelectedRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_defaultStyle(XMLFile@+)", asMETHOD(Console, SetDefaultStyle), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "XMLFile@+ get_defaultStyle() const", asMETHOD(Console, GetDefaultStyle), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_visible(bool)", asMETHOD(Console, SetVisible), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "bool get_visible() const", asMETHOD(Console, IsVisible), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_autoVisibleOnError(bool)", asMETHOD(Console, SetAutoVisibleOnError), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "bool get_autoVisibleOnError() const", asMETHOD(Console, IsAutoVisibleOnError), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_commandInterpreter(const String&in)", asMETHOD(Console, SetCommandInterpreter), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "const String& get_commandInterpreter() const", asMETHOD(Console, GetCommandInterpreter), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_numBufferedRows(uint)", asMETHOD(Console, SetNumBufferedRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "uint get_numBufferedRows() const", asMETHOD(Console, GetNumBufferedRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_numRows(uint)", asMETHOD(Console, SetNumRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "uint get_numRows() const", asMETHOD(Console, GetNumRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_numHistoryRows(uint)", asMETHOD(Console, SetNumHistoryRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "uint get_numHistoryRows() const", asMETHOD(Console, GetNumHistoryRows), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void set_focusOnShow(bool)", asMETHOD(Console, SetFocusOnShow), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "bool get_focusOnShow() const", asMETHOD(Console, GetFocusOnShow), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "uint get_historyPosition() const", asMETHOD(Console, GetHistoryPosition), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "const String& get_historyRow(uint) const", asMETHOD(Console, GetHistoryRow), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "BorderImage@+ get_background() const", asMETHOD(Console, GetBackground), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "LineEdit@+ get_lineEdit() const", asMETHOD(Console, GetLineEdit), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "Button@+ get_closeButton() const", asMETHOD(Console, GetCloseButton), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void AddAutoComplete(const String&in)", asMETHOD(Console, AddAutoComplete), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Console", "void RemoveAutoComplete(const String&in)", asMETHOD(Console, RemoveAutoComplete), asCALL_THISCALL);
-    engine->RegisterGlobalFunction("Console@+ get_console()", asFUNCTION(GetConsole), asCALL_CDECL);
-}
-
-static DebugHud* GetDebugHud()
-{
-    return GetScriptContext()->GetSubsystem<DebugHud>();
-}
-
-static void RegisterDebugHud(asIScriptEngine* engine)
-{
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_NONE", (void*)&DEBUGHUD_SHOW_NONE);
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_STATS", (void*)&DEBUGHUD_SHOW_STATS);
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_MODE", (void*)&DEBUGHUD_SHOW_MODE);
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_PROFILER", (void*)&DEBUGHUD_SHOW_PROFILER);
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_EVENTPROFILER", (void*)&DEBUGHUD_SHOW_EVENTPROFILER);
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_MEMORY", (void*)&DEBUGHUD_SHOW_MEMORY);
-    engine->RegisterGlobalProperty("const uint DEBUGHUD_SHOW_ALL", (void*)&DEBUGHUD_SHOW_ALL);
-
-    RegisterObject<Console>(engine, "DebugHud");
-    engine->RegisterObjectMethod("DebugHud", "void Update()", asMETHOD(DebugHud, Update), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void Toggle(uint)", asMETHOD(DebugHud, Toggle), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void ToggleAll()", asMETHOD(DebugHud, ToggleAll), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void set_defaultStyle(XMLFile@+)", asMETHOD(DebugHud, SetDefaultStyle), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "XMLFile@+ get_defaultStyle() const", asMETHOD(DebugHud, GetDefaultStyle), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void set_mode(uint)", asMETHOD(DebugHud, SetMode), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "uint get_mode() const", asMETHOD(DebugHud, GetMode), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void set_profilerMaxDepth(uint)", asMETHOD(DebugHud, SetProfilerMaxDepth), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "uint get_profilerMaxDepth() const", asMETHOD(DebugHud, GetProfilerMaxDepth), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void set_profilerInterval(float)", asMETHOD(DebugHud, SetProfilerInterval), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "float get_profilerInterval() const", asMETHOD(DebugHud, GetProfilerInterval), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void set_useRendererStats(bool)", asMETHOD(DebugHud, SetUseRendererStats), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "bool get_useRendererStats() const", asMETHOD(DebugHud, GetUseRendererStats), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "Text@+ get_statsText() const", asMETHOD(DebugHud, GetStatsText), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "Text@+ get_modeText() const", asMETHOD(DebugHud, GetModeText), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "Text@+ get_profilerText() const", asMETHOD(DebugHud, GetProfilerText), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "Text@+ get_memoryText() const", asMETHOD(DebugHud, GetMemoryText), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void SetAppStats(const String&in, const Variant&in)", asMETHODPR(DebugHud, SetAppStats, (const String&, const Variant&), void), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void SetAppStats(const String&in, const String&in)", asMETHODPR(DebugHud, SetAppStats, (const String&, const String&), void), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void ResetAppStats(const String&in)", asMETHOD(DebugHud, ResetAppStats), asCALL_THISCALL);
-    engine->RegisterObjectMethod("DebugHud", "void ClearAppStats()", asMETHOD(DebugHud, ClearAppStats), asCALL_THISCALL);
-    engine->RegisterGlobalFunction("DebugHud@+ get_debugHud()", asFUNCTION(GetDebugHud), asCALL_CDECL);
-}
 
 static Engine* GetEngine()
 {
@@ -142,8 +63,6 @@ static void RegisterEngine(asIScriptEngine* engine)
 
 void RegisterEngineAPI(asIScriptEngine* engine)
 {
-    RegisterConsole(engine);
-    RegisterDebugHud(engine);
     RegisterEngine(engine);
 }
 

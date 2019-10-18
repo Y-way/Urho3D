@@ -22,9 +22,9 @@
 
 #include <Urho3D/Engine/Application.h>
 #include <Urho3D/Graphics/Camera.h>
-#include <Urho3D/Engine/Console.h>
+#include <Urho3D/UI/Console.h>
 #include <Urho3D/UI/Cursor.h>
-#include <Urho3D/Engine/DebugHud.h>
+#include <Urho3D/UI/DebugHud.h>
 #include <Urho3D/Engine/Engine.h>
 #include <Urho3D/Engine/EngineDefs.h>
 #include <Urho3D/IO/FileSystem.h>
