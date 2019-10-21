@@ -84,7 +84,12 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
 
     desired.freq = mixRate;
 
+// The concept behind the emscripten audio port is to treat it as 16 bit until the final accumulation form the clip buffer
+#ifdef __EMSCRIPTEN__
+    desired.format = AUDIO_F32LSB;
+#else
     desired.format = AUDIO_S16;
+#endif
     desired.channels = (Uint8)(stereo ? 2 : 1);
     desired.callback = SDLAudioCallback;
     desired.userdata = this;
@@ -95,30 +100,38 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     if (Abs((int)desired.samples / 2 - bufferSamples) < Abs((int)desired.samples - bufferSamples))
         desired.samples /= 2;
 
-    // Intentionally disallow format change so that the obtained format will always be the desired format, even though that format
-    // is not matching the device format, however in doing it will enable the SDL's internal audio stream with audio conversion
-    deviceID_ = SDL_OpenAudioDevice(nullptr, SDL_FALSE, &desired, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE&~SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+    deviceID_ = SDL_OpenAudioDevice(0, SDL_FALSE, &desired, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
     if (!deviceID_)
     {
         URHO3D_LOGERROR("Could not initialize audio output");
         return false;
     }
 
-    if (obtained.format != AUDIO_S16)
+#ifdef __EMSCRIPTEN__
+    if (obtained.format != AUDIO_F32LSB && obtained.format != AUDIO_F32MSB && obtained.format != AUDIO_F32SYS)
+    {
+        URHO3D_LOGERROR("Could not initialize audio output, 32-bit float buffer format not supported");
+        SDL_CloseAudioDevice(deviceID_);
+        deviceID_ = 0;
+        return false;
+    }
+#else
+    if (obtained.format != AUDIO_S16SYS && obtained.format != AUDIO_S16LSB && obtained.format != AUDIO_S16MSB)
     {
         URHO3D_LOGERROR("Could not initialize audio output, 16-bit buffer format not supported");
         SDL_CloseAudioDevice(deviceID_);
         deviceID_ = 0;
         return false;
     }
+#endif
 
     stereo_ = obtained.channels == 2;
     sampleSize_ = (unsigned)(stereo_ ? sizeof(int) : sizeof(short));
     // Guarantee a fragment size that is low enough so that Vorbis decoding buffers do not wrap
-    fragmentSize_ = Min(NextPowerOfTwo((unsigned)mixRate >> 6u), (unsigned)obtained.samples);
+    fragmentSize_ = Min(NextPowerOfTwo((unsigned)(mixRate >> 6)), (unsigned)obtained.samples);
     mixRate_ = obtained.freq;
     interpolation_ = interpolation;
-    clipBuffer_ = new int[stereo ? fragmentSize_ << 1u : fragmentSize_];
+    clipBuffer_ = new int[stereo ? fragmentSize_ << 1 : fragmentSize_];
 
     URHO3D_LOGINFO("Set audio mode " + String(mixRate_) + " Hz " + (stereo_ ? "stereo" : "mono") + " " +
             (interpolation_ ? "interpolated" : ""));
@@ -194,11 +207,11 @@ void Audio::SetListener(SoundListener* listener)
     listener_ = listener;
 }
 
-void Audio::StopSound(Sound* sound)
+void Audio::StopSound(Sound* soundClip)
 {
     for (PODVector<SoundSource*>::Iterator i = soundSources_.Begin(); i != soundSources_.End(); ++i)
     {
-        if ((*i)->GetSound() == sound)
+        if ((*i)->GetSound() == soundClip)
             (*i)->Stop();
     }
 }
@@ -259,7 +272,7 @@ void SDLAudioCallback(void* userdata, Uint8* stream, int len)
     auto* audio = static_cast<Audio*>(userdata);
     {
         MutexLock Lock(audio->GetMutex());
-        audio->MixOutput(stream, len / audio->GetSampleSize());
+        audio->MixOutput(stream, len / audio->GetSampleSize() / Audio::SAMPLE_SIZE_MUL);
     }
 }
 
@@ -267,7 +280,7 @@ void Audio::MixOutput(void* dest, unsigned samples)
 {
     if (!playing_ || !clipBuffer_)
     {
-        memset(dest, 0, samples * (size_t)sampleSize_);
+        memset(dest, 0, samples * sampleSize_ * SAMPLE_SIZE_MUL);
         return;
     }
 
@@ -298,11 +311,17 @@ void Audio::MixOutput(void* dest, unsigned samples)
             source->Mix(clipPtr, workSamples, mixRate_, stereo_, interpolation_);
         }
         // Copy output from clip buffer to destination
-        auto* destPtr = (short*)dest;
+#ifdef __EMSCRIPTEN__
+        float* destPtr = (float*)dest;
+        while (clipSamples--)
+            *destPtr++ = (float)Clamp(*clipPtr++, -32768, 32767) / 32768.0f;
+#else
+        short* destPtr = (short*)dest;
         while (clipSamples--)
             *destPtr++ = (short)Clamp(*clipPtr++, -32768, 32767);
+#endif
         samples -= workSamples;
-        ((unsigned char*&)dest) += sampleSize_ * workSamples;
+        ((unsigned char*&)dest) += sampleSize_ * SAMPLE_SIZE_MUL * workSamples;
     }
 }
 
