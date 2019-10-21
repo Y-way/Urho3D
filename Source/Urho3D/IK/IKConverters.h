@@ -28,6 +28,11 @@
 #include <ik/quat.h>
 #include <ik/vec3.h>
 
+// ATOMIC BEGIN
+#undef ON
+#undef OFF
+// ATOMIC END
+
 namespace Urho3D {
 
 /// Converts from an Urho3D Vector3 to an IK vec3_t
