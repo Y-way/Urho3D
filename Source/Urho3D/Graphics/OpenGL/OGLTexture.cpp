@@ -344,4 +344,19 @@ void Texture::RegenerateLevels()
     levelsDirty_ = false;
 }
 
+// ATOMIC BEGIN
+// Only used on D3D11, here to satisfy script binding linking
+unsigned Texture::GetSRVFormat(unsigned format)
+{
+        return 0;
+}
+
+// Only used on D3D11, here to satisfy script binding linking
+unsigned Texture::GetDSVFormat(unsigned format)
+{
+        return 0;
+}
+
+// ATOMIC END
+
 }
