@@ -137,6 +137,9 @@ URHO3D_API unsigned ToLower(unsigned ch);
 URHO3D_API String GetFileSizeString(unsigned long long memorySize);
 /// Decode a base64-encoded string into buffer.
 URHO3D_API PODVector<unsigned char> DecodeBase64(String encodedString);
+// ATOMIC BEGIN
+URHO3D_API String ToStringVariadic(const char* formatString, va_list args);
+// ATOMIC END
 /// Parse type from a C string.
 template <class T> T FromString(const char* source);
 

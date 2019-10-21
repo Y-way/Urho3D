@@ -518,6 +518,21 @@ String GetMiniDumpDir()
     return miniDumpDir;
 }
 
+// ATOMIC BEGIN
+
+void QuoteArguments(Vector<String>& args)
+{
+    for (unsigned i = 0; i < args.Size(); i++)
+    {
+        if (args[i].Contains(' ') && !args[i].Contains('"'))
+        {
+            args[i] = "\"" + args[i] + "\"";
+        }
+    }
+}
+
+// ATOMIC END
+
 unsigned long long GetTotalMemory()
 {
 #if defined(__linux__) && !defined(__ANDROID__)

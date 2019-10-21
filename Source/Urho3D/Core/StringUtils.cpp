@@ -841,4 +841,14 @@ PODVector<unsigned char> DecodeBase64(String encodedString)
     return ret;
 }
 
+// ATOMIC BEGIN
+
+String ToStringVariadic(const char* formatString, va_list args)
+{
+    String ret;
+    ret.AppendWithFormatArgs(formatString, args);
+    return ret;
+}
+// ATOMIC END
+
 }
