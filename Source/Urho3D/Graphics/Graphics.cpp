@@ -56,10 +56,24 @@
 
 #include <SDL/SDL.h>
 
+// ATOMIC BEGIN
+
+#include "Text3D/Text3DFont.h"
+#include "Text3D/Text3DText.h"
+#include "Text3D/Text3D.h"
+
+#include <SDL/SDL_syswm.h>
+// ATOMIC END
+
 #include "../DebugNew.h"
 
 namespace Urho3D
 {
+
+// ATOMIC BEGIN
+unsigned Graphics::numPasses_{0};
+unsigned Graphics::numSinglePassPrimitives_{0};
+// ATOMIC END
 
 void Graphics::SetExternalWindow(void* window)
 {
@@ -428,6 +442,28 @@ void RegisterGraphicsLibrary(Context* context)
     DebugRenderer::RegisterObject(context);
     Octree::RegisterObject(context);
     Zone::RegisterObject(context);
+
+    // ATOMIC BEGIN
+    Text3DFont::RegisterObject(context);
+    Text3DText::RegisterObject(context);
+    Text3D::RegisterObject(context);
+    // ATOMIC END
 }
+
+// ATOMIC BEGIN
+
+int Graphics::GetNumMonitors()
+{
+    return SDL_GetNumVideoDisplays();
+}
+
+IntVector2 Graphics::GetMonitorResolution(int monitorId) const
+{
+    SDL_DisplayMode mode;
+    SDL_GetDesktopDisplayMode(monitorId, &mode);
+    return IntVector2(mode.w, mode.h);
+}
+
+// ATOMIC END
 
 }

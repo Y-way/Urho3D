@@ -55,6 +55,16 @@
 namespace Urho3D
 {
 
+static const Vector3* directions[] =
+{
+    &Vector3::RIGHT,
+    &Vector3::LEFT,
+    &Vector3::UP,
+    &Vector3::DOWN,
+    &Vector3::FORWARD,
+    &Vector3::BACK
+};
+
 /// %Frustum octree query for shadowcasters.
 class ShadowCasterOctreeQuery : public FrustumOctreeQuery
 {
@@ -635,7 +645,7 @@ void View::Render()
 
             graphics_->SetRenderTarget(0, currentRenderTarget_);
             for (unsigned i = 1; i < MAX_RENDERTARGETS; ++i)
-                graphics_->SetRenderTarget(i, (RenderSurface*)nullptr);
+                graphics_->SetRenderTarget(i, nullptr);
 
             // If a custom depth surface was used, use it also for debug rendering
             graphics_->SetDepthStencil(lastCustomDepthSurface_ ? lastCustomDepthSurface_ : GetDepthStencil(currentRenderTarget_));
@@ -1612,9 +1622,15 @@ void View::ExecuteRenderPathCommands()
                     URHO3D_PROFILE(RenderLights);
 
                     SetRenderTargets(command);
+// ATOMIC BEGIN
+                    graphics_->SetNumPasses(0);
 
                     for (Vector<LightBatchQueue>::Iterator i = actualView->lightQueues_.Begin(); i != actualView->lightQueues_.End(); ++i)
                     {
+
+                        graphics_->SetNumPasses(graphics_->GetNumPasses() + 1);
+
+// ATOMIC END
                         // If reusing shadowmaps, render each of them before the lit batches
                         if (renderer_->GetReuseShadowMaps() && NeedRenderShadowMap(*i))
                         {
@@ -1762,7 +1778,7 @@ void View::SetRenderTargets(RenderPathCommand& command)
 
     while (index < MAX_RENDERTARGETS)
     {
-        graphics_->SetRenderTarget(index, (RenderSurface*)nullptr);
+        graphics_->SetRenderTarget(index, nullptr);
         ++index;
     }
 
@@ -2046,12 +2062,14 @@ void View::AllocateScreenBuffers()
     // Allocate screen buffers. Enable filtering in case the quad commands need that
     // Follow the sRGB mode of the destination render target
     bool sRGB = renderTarget_ ? renderTarget_->GetParentTexture()->GetSRGB() : graphics_->GetSRGB();
+    int multiSample = renderTarget_ ? renderTarget_->GetMultiSample() : graphics_->GetMultiSample();
+    bool autoResolve = renderTarget_ ? renderTarget_->GetAutoResolve() : true;
     substituteRenderTarget_ = needSubstitute ? GetRenderSurfaceFromTexture(renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_,
-        format, 1, false, false, true, sRGB)) : nullptr;
+        format, multiSample, autoResolve, false, true, sRGB)) : nullptr;
     for (unsigned i = 0; i < MAX_VIEWPORT_TEXTURES; ++i)
     {
-        viewportTextures_[i] = i < numViewportTextures ? renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_, format, 1, false,
-            false, true, sRGB) : nullptr;
+        viewportTextures_[i] = i < numViewportTextures ? renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_, format, multiSample,
+            autoResolve, false, true, sRGB) : nullptr;
     }
     // If using a substitute render target and pingponging, the substitute can act as the second viewport texture
     if (numViewportTextures == 1 && substituteRenderTarget_)
@@ -2115,7 +2133,7 @@ void View::BlitFramebuffer(Texture* source, RenderSurface* destination, bool dep
     graphics_->SetStencilTest(false);
     graphics_->SetRenderTarget(0, destination);
     for (unsigned i = 1; i < MAX_RENDERTARGETS; ++i)
-        graphics_->SetRenderTarget(i, (RenderSurface*)nullptr);
+        graphics_->SetRenderTarget(i, nullptr);
     graphics_->SetDepthStencil(GetDepthStencil(destination));
     graphics_->SetViewport(destRect);
 
@@ -2568,16 +2586,6 @@ void View::SetupShadowCameras(LightQueryResult& query)
 
     case LIGHT_POINT:
         {
-            static const Vector3* directions[] =
-            {
-                &Vector3::RIGHT,
-                &Vector3::LEFT,
-                &Vector3::UP,
-                &Vector3::DOWN,
-                &Vector3::FORWARD,
-                &Vector3::BACK
-            };
-
             for (unsigned i = 0; i < MAX_CUBEMAP_FACES; ++i)
             {
                 Camera* shadowCamera = renderer_->GetShadowCamera();
@@ -3070,7 +3078,7 @@ void View::RenderShadowMap(const LightBatchQueue& queue)
         graphics_->SetRenderTarget(0, shadowMap->GetRenderSurface()->GetLinkedRenderTarget());
         // Disable other render targets
         for (unsigned i = 1; i < MAX_RENDERTARGETS; ++i)
-            graphics_->SetRenderTarget(i, (RenderSurface*) nullptr);
+            graphics_->SetRenderTarget(i, nullptr);
         graphics_->SetViewport(IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
         graphics_->Clear(CLEAR_DEPTH);
     }
@@ -3080,7 +3088,7 @@ void View::RenderShadowMap(const LightBatchQueue& queue)
         graphics_->SetRenderTarget(0, shadowMap);
         // Disable other render targets
         for (unsigned i = 1; i < MAX_RENDERTARGETS; ++i)
-            graphics_->SetRenderTarget(i, (RenderSurface*) nullptr);
+            graphics_->SetRenderTarget(i, nullptr);
         graphics_->SetDepthStencil(renderer_->GetDepthStencil(shadowMap->GetWidth(), shadowMap->GetHeight(),
             shadowMap->GetMultiSample(), shadowMap->GetAutoResolve()));
         graphics_->SetViewport(IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
@@ -3118,6 +3126,11 @@ void View::RenderShadowMap(const LightBatchQueue& queue)
         {
             graphics_->SetViewport(shadowQueue.shadowViewport_);
             shadowQueue.shadowBatches_.Draw(this, shadowQueue.shadowCamera_, false, false, true);
+
+// ATOMIC BEGIN
+            graphics_->SetNumPasses(graphics_->GetNumPasses() + 1);
+// ATOMIC END
+
         }
     }
 
@@ -3180,7 +3193,7 @@ Texture* View::FindNamedTexture(const String& name, bool isRenderTarget, bool is
         return renderTargets_[nameHash];
 
     // Then the resource system
-    auto* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = GetSubsystem<ResourceCache>();
 
     // Check existing resources first. This does not load resources, so we can afford to guess the resource type wrong
     // without having to rely on the file extension

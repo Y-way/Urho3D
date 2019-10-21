@@ -218,7 +218,8 @@ bool Material::BeginLoad(Deserializer& source)
     String extension = GetExtension(source.GetName());
 
     bool success = false;
-    if (extension == ".xml")
+    // ATOMIC BEGIN
+    if (extension == ".xml" || extension == ".material")
     {
         success = BeginLoadXML(source);
         if (!success)
@@ -231,11 +232,16 @@ bool Material::BeginLoad(Deserializer& source)
     {
         success = BeginLoadJSON(source);
         if (!success)
+        {
+            // reset position
+            source.Seek(0);
             success = BeginLoadXML(source);
+        }
 
         if (success)
             return true;
     }
+    // ATOMIC END
 
     // All loading failed
     ResetToDefaults();
@@ -1380,5 +1386,13 @@ void Material::ApplyShaderDefines(unsigned index)
     else
         techniques_[index].technique_ = techniques_[index].original_->CloneWithDefines(vertexShaderDefines_, pixelShaderDefines_);
 }
+
+// ATOMIC BEGIN
+const char** Material::GetTextureUnitNames()
+{
+    return textureUnitNames;
+}
+// ATOMIC END
+
 
 }

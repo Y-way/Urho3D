@@ -404,13 +404,13 @@ SharedPtr<Technique> Technique::Clone(const String& cloneName) const
     return ret;
 }
 
-Pass* Technique::CreatePass(const String& name)
+Pass* Technique::CreatePass(const String& passName)
 {
-    Pass* oldPass = GetPass(name);
+    Pass* oldPass = GetPass(passName);
     if (oldPass)
         return oldPass;
 
-    SharedPtr<Pass> newPass(new Pass(name));
+    SharedPtr<Pass> newPass(new Pass(passName));
     unsigned passIndex = newPass->GetIndex();
     if (passIndex >= passes_.Size())
         passes_.Resize(passIndex + 1);
@@ -422,9 +422,9 @@ Pass* Technique::CreatePass(const String& name)
     return newPass;
 }
 
-void Technique::RemovePass(const String& name)
+void Technique::RemovePass(const String& passName)
 {
-    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(name.ToLower());
+    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(passName.ToLower());
     if (i == passIndices.End())
         return;
     else if (i->second_ < passes_.Size() && passes_[i->second_].Get())
@@ -434,21 +434,21 @@ void Technique::RemovePass(const String& name)
     }
 }
 
-bool Technique::HasPass(const String& name) const
+bool Technique::HasPass(const String& passName) const
 {
-    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(name.ToLower());
+    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(passName.ToLower());
     return i != passIndices.End() ? HasPass(i->second_) : false;
 }
 
-Pass* Technique::GetPass(const String& name) const
+Pass* Technique::GetPass(const String& passName) const
 {
-    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(name.ToLower());
+    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(passName.ToLower());
     return i != passIndices.End() ? GetPass(i->second_) : nullptr;
 }
 
-Pass* Technique::GetSupportedPass(const String& name) const
+Pass* Technique::GetSupportedPass(const String& passName) const
 {
-    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(name.ToLower());
+    HashMap<String, unsigned>::ConstIterator i = passIndices.Find(passName.ToLower());
     return i != passIndices.End() ? GetSupportedPass(i->second_) : nullptr;
 }
 

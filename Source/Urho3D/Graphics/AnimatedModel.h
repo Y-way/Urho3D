@@ -48,11 +48,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Return true if successful.
-    bool Load(Deserializer& source) override;
+    bool Load(Deserializer& source, bool setInstanceDefault = false) override;
     /// Load from XML data. Return true if successful.
-    bool LoadXML(const XMLElement& source) override;
+    bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
     /// Load from JSON data. Return true if successful.
-    bool LoadJSON(const JSONValue& source) override;
+    bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
     void ApplyAttributes() override;
     /// Process octree raycast. May be called from a worker thread.
@@ -168,6 +168,16 @@ public:
     /// Recalculate the bone bounding box. Normally called internally, but can also be manually called if up-to-date information before rendering is necessary.
     void UpdateBoneBoundingBox();
 
+    // ATOMIC BEGIN
+
+    /// Return the node of a skeleton bone (for script access)
+    Node* GetSkeletonBoneNode(const String& boneName);
+
+    /// Set bone creation override. Useful for previewing animations in the editor scene view.
+    void SetBoneCreationOverride(bool enabled) { boneCreationOverride_ = enabled; }
+
+    // ATOMIC END
+
 protected:
     /// Handle node being assigned.
     void OnNodeSet(Node* node) override;
@@ -259,6 +269,8 @@ private:
     bool assignBonesPending_;
     /// Force animation update after becoming visible flag.
     bool forceAnimationUpdate_;
+    /// Override global bone creation flag, locally.
+    bool boneCreationOverride_;
 };
 
 }
