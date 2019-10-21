@@ -74,4 +74,12 @@ static const String EP_WINDOW_TITLE = "WindowTitle";
 static const String EP_WINDOW_WIDTH = "WindowWidth";
 static const String EP_WORKER_THREADS = "WorkerThreads";
 
+// ATOMIC BEGIN
+static const String EP_FPS_MAXIMIZED = "MaxFps";
+static const String EP_FPS_MINIMIZED = "MinFps";
+static const String EP_WINDOW_MAXIMIZED = "WindowMaximized";
+static const String EP_AUTO_METRICS = "AutoMetrics";
+static const String EP_PROFILER_LISTEN = "ProfilerListen";
+static const String EP_PROFILER_PORT = "ProfilerPort";
+// ATOMIC END
 }
