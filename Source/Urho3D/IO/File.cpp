@@ -47,7 +47,10 @@ static const wchar_t* openMode[] =
     L"rb",
     L"wb",
     L"r+b",
-    L"w+b"
+    L"w+b",
+// ATOMIC BEGIN
+    L"a+b"
+// ATOMIC END
 };
 #else
 static const char* openMode[] =
@@ -55,7 +58,10 @@ static const char* openMode[] =
     "rb",
     "wb",
     "r+b",
-    "w+b"
+    "w+b",
+// ATOMIC BEGIN
+    "a+b"
+// ATOMIC END
 };
 #endif
 
@@ -95,7 +101,10 @@ File::File(Context* context, const String& fileName, FileMode mode) :
     checksum_(0),
     compressed_(false),
     readSyncNeeded_(false),
-    writeSyncNeeded_(false)
+    writeSyncNeeded_(false),
+    // ATOMIC BEGIN
+    fullPath_(fileName)
+    // ATOMIC END
 {
     Open(fileName, mode);
 }
@@ -419,7 +428,7 @@ void File::SetName(const String& name)
 bool File::IsOpen() const
 {
 #ifdef __ANDROID__
-    return handle_ != 0 || assetHandle_ != 0;
+    return handle_ != nullptr || assetHandle_ != nullptr;
 #else
     return handle_ != nullptr;
 #endif
@@ -549,5 +558,38 @@ void File::SeekInternal(unsigned newPosition)
 #endif
         fseek((FILE*)handle_, newPosition, SEEK_SET);
 }
+
+// ATOMIC BEGIN
+
+void File::ReadText(String& text)
+{
+    text.Clear();
+
+    if (!size_)
+        return;
+
+    text.Resize(size_);
+
+    Read((void*)text.CString(), size_);
+}
+
+bool File::Copy(File* srcFile)
+{
+    if (!srcFile || !srcFile->IsOpen() || srcFile->GetMode() != FILE_READ)
+        return false;
+
+    if (!IsOpen() || GetMode() != FILE_WRITE)
+        return false;
+
+    unsigned fileSize = srcFile->GetSize();
+    SharedArrayPtr<unsigned char> buffer(new unsigned char[fileSize]);
+
+    unsigned bytesRead = srcFile->Read(buffer.Get(), fileSize);
+    unsigned bytesWritten = Write(buffer.Get(), fileSize);
+    return bytesRead == fileSize && bytesWritten == fileSize;
+
+}
+
+// ATOMIC END
 
 }
