@@ -20,14 +20,14 @@
 // THE SOFTWARE.
 //
 
-#include <Atomic/IO/Log.h>
-#include <Atomic/IO/FileSystem.h>
+#include <Urho3D/IO/Log.h>
+#include <Urho3D/IO/FileSystem.h>
 
-#include <Atomic/IPC/IPC.h>
-#include <Atomic/IPC/IPCEvents.h>
-#include <Atomic/IPC/IPCBroker.h>
+#include <Urho3D/IPC/IPC.h>
+#include <Urho3D/IPC/IPCEvents.h>
+#include <Urho3D/IPC/IPCBroker.h>
 
-#include <Atomic/Core/CoreEvents.h>
+#include <Urho3D/Core/CoreEvents.h>
 
 #include "IPCServer.h"
 

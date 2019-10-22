@@ -19,7 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-#include <stdio>
+#include <stdio.h>
 #include "Precompiled.h"
 #include "../Core/Context.h"
 #include "../Scene/Node.h"
@@ -33,7 +33,8 @@
 namespace Urho3D
 {
 
-TimeOfDay::TimeOfDay(Context *context) : Component(context),
+TimeOfDay::TimeOfDay(Context *context)
+    : LogicComponent(context),
     timeOn_(0.0f),
     timeOff_(0.0f),
     on_(true)

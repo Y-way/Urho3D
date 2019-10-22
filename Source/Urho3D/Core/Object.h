@@ -275,8 +275,8 @@ public:
     /// Return type hash of objects created by this factory.
     StringHash GetType() const { return typeInfo_->GetType(); }
 
-    /// Return type name of objects created by this factory.
-    const String& GetTypeName() const { return typeInfo_->GetTypeName(); }
+    ///// Return type name of objects created by this factory.
+    const String& GetFactoryTypeName() const { return typeInfo_->GetTypeName(); }
 
 protected:
     /// Execution context.

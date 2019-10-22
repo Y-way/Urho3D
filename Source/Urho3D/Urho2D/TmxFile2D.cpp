@@ -889,7 +889,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
 
 // BEGIN ATOMIC
 
-TmxObjectGroup2D* TmxFile2D::GetTileObjectGroup(int gid) const
+TmxObjectGroup2D* TmxFile2D::GetTileObjectGroup(unsigned gid) const
 {
     HashMap<int, SharedPtr<TmxObjectGroup2D> >::ConstIterator i = gidToObjectGroupMapping_.Find(gid);
     if (i == gidToObjectGroupMapping_.End())

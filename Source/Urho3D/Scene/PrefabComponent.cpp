@@ -1,11 +1,10 @@
 
-#include <Urho3D/Core/Context.h>
-#include <Urho3D/Scene/Node.h>
-#include <Urho3D/Resource/XMLFile.h>
-#include <Urho3D/Resource/ResourceCache.h>
-#include <Urho3D/Resource/ResourceEvents.h>
+#include "../Core/Context.h"
+#include "../Resource/XMLFile.h"
+#include "../Resource/ResourceCache.h"
+#include "../Resource/ResourceEvents.h"
 
-#include <Urho3D/Physics/RigidBody.h>
+#include <../Physics/RigidBody.h>
 
 #include "PrefabEvents.h"
 #include "PrefabComponent.h"

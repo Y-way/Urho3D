@@ -626,7 +626,7 @@ public:
                 return Iterator(node);
         }
 
-        return InsertNode(key, value, false);
+        return Iterator(InsertNode(key, value, false));
     }
 
 private:

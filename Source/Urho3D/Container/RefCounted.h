@@ -151,11 +151,6 @@ public:
 // ATOMIC END
 
 private:
-    /// Prevent copy construction.
-    RefCounted(const RefCounted& rhs);
-    /// Prevent assignment.
-    RefCounted& operator =(const RefCounted& rhs);
-
     /// Pointer to the reference count structure.
     RefCount* refCount_;
 

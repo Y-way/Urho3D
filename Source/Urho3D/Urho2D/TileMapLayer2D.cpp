@@ -411,14 +411,12 @@ void TileMapLayer2D::SetObjectGroup(const TmxObjectGroup2D* objectGroup)
         const TileMapObject2D* object = objectGroup->GetObject(i);
 
         // Create dummy node for all object
-        SharedPtr<Node> objectNode(GetNode()->CreateTemporaryChild("Object"));
+        SharedPtr<Node> objectNode(GetNode()->CreateTemporaryChild(object->GetName()));
         objectNode->SetPosition(Vector3(object->GetPosition()));
 
         // ATOMIC BEGIN
-        SharedPtr<Node> objectNode(GetNode()->CreateTemporaryChild(object->GetName()));
+        //SharedPtr<Node> objectNode(GetNode()->CreateTemporaryChild(object->GetName()));
         // ATOMIC END
-
-        objectNode->SetPosition(object->GetPosition());
 
         // If object is tile, create static sprite component
         if (object->GetObjectType() == OT_TILE && object->GetTileGid() && object->GetTileSprite())

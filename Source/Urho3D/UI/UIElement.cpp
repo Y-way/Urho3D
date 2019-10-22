@@ -168,12 +168,12 @@ void UIElement::ApplyAttributes()
     }
 }
 
-bool UIElement::LoadXML(const XMLElement& source)
+bool UIElement::LoadXML(const XMLElement& source, bool setInstanceDefault)
 {
-    return LoadXML(source, nullptr);
+    return LoadXML(source, nullptr, setInstanceDefault);
 }
 
-bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile)
+bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile, bool setInstanceDefault)
 {
     // Get style override if defined
     String styleName = source.GetAttribute("style");
@@ -206,7 +206,7 @@ bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile)
     DisableLayoutUpdate();
 
     // Then load rest of the attributes from the source
-    if (!Animatable::LoadXML(source))
+    if (!Animatable::LoadXML(source, setInstanceDefault))
         return false;
 
     unsigned nextInternalChild = 0;

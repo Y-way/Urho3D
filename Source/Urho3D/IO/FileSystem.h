@@ -121,6 +121,8 @@ public:
     String GetUserDocumentsDir() const;
     /// Return the application preferences directory.
     String GetAppPreferencesDir(const String& org, const String& app) const;
+    /// Return path of temporary directory. Path always ends with a forward slash.
+    String GetTemporaryDir() const;
 
 // ATOMIC BEGIN
     /// Scan specified files, returning them as an iterator

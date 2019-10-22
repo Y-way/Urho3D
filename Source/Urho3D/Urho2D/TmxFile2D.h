@@ -126,7 +126,7 @@ public:
 // ATOMIC END
 
     /// Store object.
-    void StoreObject(XMLElement objectElem, SharedPtr<TileMapObject2D> object, const TileMapInfo2D& info,
+    void StoreObject(const XMLElement& objectElem, const SharedPtr<TileMapObject2D>& object, const TileMapInfo2D& info,
                      bool isTile = false, bool local = false);
 
     /// Return number of objects.

@@ -48,8 +48,8 @@ static unsigned RemapAttributeIndex(const Vector<AttributeInfo>* attributes, con
         // Compare either the accessor or offset to avoid name string compare
         if (attr.accessor_.Get() && attr.accessor_.Get() == netAttr.accessor_.Get())
             return i;
-        else if (!attr.accessor_.Get() && attr.offset_ == netAttr.offset_)
-            return i;
+        //else if (!attr.accessor_.Get() && attr.offset_ == netAttr.offset_)
+        //    return i;
     }
 
     return netAttrIndex; // Could not remap
@@ -77,8 +77,9 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
         return;
     }
 
-    // Calculate the destination address
-    void* dest = attr.ptr_ ? attr.ptr_ : reinterpret_cast<unsigned char*>(this) + attr.offset_;
+    // Get the destination address
+    assert(attr.ptr_);
+    void* dest = attr.ptr_;
 
     switch (attr.type_)
     {
@@ -185,8 +186,9 @@ void Serializable::OnGetAttribute(const AttributeInfo& attr, Variant& dest) cons
         return;
     }
 
-    // Calculate the source address
-    const void* src = attr.ptr_ ? attr.ptr_ : reinterpret_cast<const unsigned char*>(this) + attr.offset_;
+    // Get the destination address
+    assert(attr.ptr_);
+    const void* src = attr.ptr_;
 
     switch (attr.type_)
     {

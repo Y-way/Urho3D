@@ -482,7 +482,8 @@ void PositionalLight2D::UpdateVertices()
     }
 }
 
-PointLight2D::PointLight2D(Context* context) : PositionalLight2D(context),
+PointLight2D::PointLight2D(Context* context) 
+    : PositionalLight2D(context),
     radius_(4.0f)
 {
     lightType_ = LIGHT2D_POINT;

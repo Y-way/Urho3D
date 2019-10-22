@@ -37,7 +37,7 @@ class URHO3D_API PrefabComponent : public Component
 public:
 
     /// Construct.
-    explicit exPrefabComponent(Context* context);
+    explicit PrefabComponent(Context* context);
     /// Destruct.
     ~PrefabComponent() override;
 

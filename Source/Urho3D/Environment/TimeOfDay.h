@@ -46,7 +46,8 @@ class TimeOfDay : public LogicComponent
     void SetTimeOn(float timeOn) { timeOn_ = timeOn; }
     void SetTimeOff(float timeOff) { timeOff_ = timeOff; }
 
-    void OnStart() override;
+    void OnStart();
+
 protected:
     void HandleSceneUpdate(StringHash eventType, VariantMap& eventData);
 

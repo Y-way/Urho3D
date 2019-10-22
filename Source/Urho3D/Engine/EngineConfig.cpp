@@ -26,6 +26,7 @@
 #include "../IO/FileSystem.h"
 #include "../Resource/JSONFile.h"
 #include "../Graphics/GraphicsDefs.h"
+#include "EngineDefs.h"
 #include "EngineConfig.h"
 
 namespace Urho3D
@@ -156,7 +157,7 @@ bool EngineConfig::LoadWindowConfig(const JSONValue& jwindow)
         const JSONValue& jvalue = i->second_;
 
         if (key == "title")
-            valueMap_["WindowTitle"] = GetStringValue(jvalue, "Atomic");
+            valueMap_["WindowTitle"] = GetStringValue(jvalue, "Urho3D");
         else if (key == "fullscreen")
             valueMap_["FullScreen"] = GetBoolValue(jvalue, false);
         else if (key == "borderless")

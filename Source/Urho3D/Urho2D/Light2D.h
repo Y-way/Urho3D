@@ -170,7 +170,7 @@ public:
 
 public:
     /// Construct.
-    explicite PointLight2D(Context* context);
+    explicit PointLight2D(Context* context);
     /// Destruct.
     ~PointLight2D() override;
 
@@ -194,7 +194,7 @@ public:
 
 public:
     /// Construct.
-    explicate Light2DGroup(Context* context);
+    explicit Light2DGroup(Context* context);
     /// Destruct.
     ~Light2DGroup() override;
     

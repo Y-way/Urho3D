@@ -160,17 +160,17 @@ public:
     {
 
     }
-    typedef U (T::*GetFunctionPtr)() const;
-    typedef void (T::*SetFunctionPtr)(U);
+    // typedef U (T::*GetFunctionPtr)() const;
+    // typedef void (T::*SetFunctionPtr)(U);
 
-    /// Construct with function pointers.
-    EnumAttributeAccessorImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
-        getFunction_(getFunction),
-        setFunction_(setFunction)
-    {
-        assert(getFunction_);
-        assert(setFunction_);
-    }
+    // /// Construct with function pointers.
+    // EnumAttributeAccessorImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
+    //     getFunction_(getFunction),
+    //     setFunction_(setFunction)
+    // {
+    //     assert(getFunction_);
+    //     assert(setFunction_);
+    // }
 
     /// Invoke getter function.
     void Get(const Serializable* ptr, Variant& value) const override

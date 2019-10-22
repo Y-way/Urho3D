@@ -31,7 +31,7 @@ namespace Urho3D
 
 class Context;
 
-/// Atomic engine configuration
+/// Urho3D engine configuration
 class URHO3D_API EngineConfig : Configuration
 {
 

@@ -68,8 +68,10 @@ public:
     UpdateGeometryType GetUpdateGeometryType() override;
 
     static float GetTimeOfDay() { return timeOfDay_; }
+
 protected:
-    static float timeOfDay_{};
+    static float timeOfDay_;
+
 protected:
     void OnNodeSet(Node* node) override;
     /// Recalculate the world-space bounding box.

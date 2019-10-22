@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Atomic/Core/Object.h>
-#include <Atomic/Container/List.h>
+#include <Urho3D/Core/Object.h>
+#include <Urho3D/Container/List.h>
 
 namespace Urho3D
 {
