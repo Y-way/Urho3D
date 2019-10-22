@@ -80,4 +80,17 @@ URHO3D_EVENT(E_CHANGELANGUAGE, ChangeLanguage)
 {
 }
 
+// ATOMIC BEGIN
+
+/// Resource was renamed
+URHO3D_EVENT(E_RENAMERESOURCENOTIFICATION, RenameResourceNotification)
+{
+    URHO3D_PARAM(P_RESOURCEPATH, Path);                    // String
+    URHO3D_PARAM(P_NEWRESOURCEPATH, NewPath);              // String
+    URHO3D_PARAM(P_NEWNAME, NewName);                      // String
+    URHO3D_PARAM(P_RESOURCE, Asset);                       // Resource pointer
+}
+
+// ATOMIC END
+
 }
