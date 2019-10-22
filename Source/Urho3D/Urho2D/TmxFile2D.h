@@ -37,8 +37,15 @@ class XMLFile;
 /// Tmx layer.
 class TmxLayer2D : public RefCounted
 {
+    URHO3D_REFCOUNTED(TmxLayer2D)
+
 public:
-    TmxLayer2D(TmxFile2D* tmxFile, TileMapLayerType2D type);
+
+// ATOMIC BEGIN
+    // default arguments for script bindings on subclasses
+    TmxLayer2D(TmxFile2D* tmxFile = 0, TileMapLayerType2D type = LT_INVALID);
+// ATOMIC END
+
     ~TmxLayer2D() override = default;
 
     /// Return tmx file.
@@ -90,6 +97,8 @@ protected:
 /// Tmx tile layer.
 class TmxTileLayer2D : public TmxLayer2D
 {
+    URHO3D_REFCOUNTED(TmxTileLayer2D)
+
 public:
     explicit TmxTileLayer2D(TmxFile2D* tmxFile);
 
@@ -106,14 +115,19 @@ protected:
 /// Tmx objects layer.
 class TmxObjectGroup2D : public TmxLayer2D
 {
+    URHO3D_REFCOUNTED(TmxObjectGroup2D)
+
 public:
     explicit TmxObjectGroup2D(TmxFile2D* tmxFile);
 
+// ATOMIC BEGIN
     /// Load from XML element.
-    bool Load(const XMLElement& element, const TileMapInfo2D& info);
+    bool Load(const XMLElement& element, const TileMapInfo2D& info, bool local = false);
+// ATOMIC END
 
     /// Store object.
-    void StoreObject(const XMLElement& objectElem, const SharedPtr<TileMapObject2D>& object, const TileMapInfo2D& info, bool isTile = false);
+    void StoreObject(XMLElement objectElem, SharedPtr<TileMapObject2D> object, const TileMapInfo2D& info,
+                     bool isTile = false, bool local = false);
 
     /// Return number of objects.
     unsigned GetNumObjects() const { return objects_.Size(); }
@@ -129,6 +143,8 @@ private:
 /// Tmx image layer.
 class TmxImageLayer2D : public TmxLayer2D
 {
+    URHO3D_REFCOUNTED(TmxImageLayer2D)
+
 public:
     explicit TmxImageLayer2D(TmxFile2D* tmxFile);
 
@@ -159,7 +175,12 @@ class URHO3D_API TmxFile2D : public Resource
     URHO3D_OBJECT(TmxFile2D, Resource);
 
 public:
-    /// Construct.
+    /** Construct.
+      * This will load a Tiled .tmx file for use.  Not all
+      * Tile options are supported.  Some important limitions are:
+      * - The Tile Layer Format must be XML
+      * - The tilesets used in the map must be made from sprite sheets. Individual images are not supported
+     */
     explicit TmxFile2D(Context* context);
     /// Destruct.
     ~TmxFile2D() override;
@@ -204,6 +225,12 @@ public:
     /// Return texture edge offset, in pixels.
     float GetSpriteTextureEdgeOffset() const { return edgeOffset_; }
 
+    // BEGIN ATOMIC
+
+    TmxObjectGroup2D* GetTileObjectGroup(unsigned gid) const;
+
+    // END ATOMIC
+
 private:
     /// Load TSX file.
     SharedPtr<XMLFile> LoadTSXFile(const String& source);
@@ -222,10 +249,17 @@ private:
     HashMap<unsigned, SharedPtr<PropertySet2D> > gidToPropertySetMapping_;
     /// Gid to tile collision shape mapping.
     HashMap<unsigned, Vector<SharedPtr<TileMapObject2D> > > gidToCollisionShapeMapping_;
-    /// Layers.
-    Vector<TmxLayer2D*> layers_;
     /// Texture edge offset.
     float edgeOffset_;
+    // ATOMIC BEGIN
+
+    /// Layers.
+    Vector<SharedPtr<TmxLayer2D>> layers_;
+
+    /// Gid to tile objectgroup  mapping.
+    HashMap<int, SharedPtr<TmxObjectGroup2D> > gidToObjectGroupMapping_;
+
+    // ATOMIC END
 };
 
 }

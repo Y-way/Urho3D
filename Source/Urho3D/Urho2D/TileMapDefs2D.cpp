@@ -26,6 +26,13 @@
 #include "../Resource/JSONFile.h"
 #include "../Urho2D/TileMapDefs2D.h"
 
+// ATOMIC BEGIN
+#include "../Scene/Node.h"
+#include "../Urho2D/CollisionBox2D.h"
+#include "../Urho2D/Drawable2D.h"
+#include "../Urho2D/TmxFile2D.h"
+// ATOMIC END
+
 #include "../DebugNew.h"
 
 namespace Urho3D
@@ -66,6 +73,8 @@ Vector2 TileMapInfo2D::ConvertPosition(const Vector2& position) const
     default:
         return Vector2(position.x_ * PIXEL_SIZE, GetMapHeight() - position.y_ * PIXEL_SIZE);
     }
+
+    return Vector2::ZERO;
 }
 
 Vector2 TileMapInfo2D::TileIndexToPosition(int x, int y) const
@@ -91,6 +100,8 @@ Vector2 TileMapInfo2D::TileIndexToPosition(int x, int y) const
     default:
         return Vector2(x * tileWidth_, (height_ - 1 - y) * tileHeight_);
     }
+
+    return Vector2::ZERO;
 }
 
 bool TileMapInfo2D::PositionToTileIndex(int& x, int& y, const Vector2& position) const
@@ -218,5 +229,37 @@ const String& TileMapObject2D::GetProperty(const String& name) const
         return String::EMPTY;
     return propertySet_->GetProperty(name);
 }
+
+// ATOMIC BEGIN
+
+TmxObjectGroup2D* Tile2D::GetObjectGroup() const
+{
+    return objectGroup_;
+}
+
+bool TileMapObject2D::ValidCollisionShape() const
+{
+    if (objectType_ == OT_RECTANGLE)
+        return true;
+
+    return false;
+}
+
+CollisionShape2D* TileMapObject2D::CreateCollisionShape(Node *node) const
+{
+    CollisionShape2D* shape = NULL;
+
+    if (objectType_ == OT_RECTANGLE)
+    {
+        CollisionBox2D* box = node->CreateComponent<CollisionBox2D>();
+        box->SetSize(size_);
+        box->SetCenter(position_);
+        shape = box;
+    }
+
+    return shape;
+}
+
+// ATOMIC END
 
 }

@@ -159,6 +159,13 @@ public:
     /// Return Box2D body.
     b2Body* GetBody() const { return body_; }
 
+    // ATOMIC BEGIN
+
+    bool GetCastShadows() const { return castShadows_; }
+    void SetCastShadows(bool castShadows) { castShadows_ = castShadows; }
+
+    // ATOMIC END
+
 private:
     /// Handle node being assigned.
     void OnNodeSet(Node* node) override;
@@ -181,6 +188,10 @@ private:
     Vector<WeakPtr<CollisionShape2D> > collisionShapes_;
     /// Constraints.
     Vector<WeakPtr<Constraint2D> > constraints_;
+
+// ATOMIC BEGIN
+    bool castShadows_;
+// ATOMIC END
 };
 
 }

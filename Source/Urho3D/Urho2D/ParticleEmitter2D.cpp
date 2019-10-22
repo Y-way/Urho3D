@@ -50,7 +50,9 @@ ParticleEmitter2D::ParticleEmitter2D(Context* context) :
     emitParticleTime_(0.0f),
     boundingBoxMinPoint_(Vector3::ZERO),
     boundingBoxMaxPoint_(Vector3::ZERO),
+    // ATOMIC BEGIN
     emitting_(true)
+    // ATOMIC END
 {
     sourceBatches_.Resize(1);
     sourceBatches_[0].owner_ = this;
@@ -362,7 +364,9 @@ void ParticleEmitter2D::Update(float timeStep)
 
 bool ParticleEmitter2D::EmitParticle(const Vector3& worldPosition, float worldAngle, float worldScale)
 {
-    if (numParticles_ >= (unsigned)effect_->GetMaxParticles() || numParticles_ >= particles_.Size())
+    // ATOMIC BEGIN
+    if (!emitting_ || numParticles_ >= (unsigned)effect_->GetMaxParticles() || numParticles_ >= particles_.Size())
+    // ATOMIC END
         return false;
 
     float lifespan = effect_->GetParticleLifeSpan() + effect_->GetParticleLifespanVariance() * Random(-1.0f, 1.0f);

@@ -191,4 +191,19 @@ Vector<SharedPtr<TileMapObject2D> > TileMap2D::GetTileCollisionShapes(unsigned g
     return tmxFile_ ? tmxFile_->GetTileCollisionShapes(gid) : shapes;
 }
 
+// ATOMIC BEGIN
+
+TileMapLayer2D* TileMap2D::GetLayerByName(const String& name) const
+{
+    for (unsigned i = 0; i < layers_.Size(); i++)
+    {
+        if (layers_[i]->GetName() == name)
+            return layers_[i];
+    }
+
+    return nullptr;
+}
+
+// ATOMIC END
+
 }

@@ -36,6 +36,9 @@
 #include "../Urho2D/PhysicsWorld2D.h"
 #include "../Urho2D/RigidBody2D.h"
 
+// ATOMIC BEGIN
+#include "../Urho2D/Drawable2D.h"
+// ATOMIC END
 #include "../DebugNew.h"
 
 namespace Urho3D
@@ -61,6 +64,13 @@ PhysicsWorld2D::PhysicsWorld2D(Context* context) :
     world_->SetContactListener(this);
     // Set debug draw
     world_->SetDebugDraw(this);
+
+    // BEGIN ATOMIC
+    // These should be false, as per the attribute defaults
+    world_->SetContinuousPhysics(false);
+    world_->SetSubStepping(false);
+    // END ATOMIC
+
 }
 
 PhysicsWorld2D::~PhysicsWorld2D()
@@ -81,7 +91,12 @@ void PhysicsWorld2D::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Draw CenterOfMass", GetDrawCenterOfMass, SetDrawCenterOfMass, bool, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Allow Sleeping", GetAllowSleeping, SetAllowSleeping, bool, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Warm Starting", GetWarmStarting, SetWarmStarting, bool, false, AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Continuous Physics", GetContinuousPhysics, SetContinuousPhysics, bool, true, AM_DEFAULT);
+
+    // ATOMIC BEGIN
+    // default false
+    URHO3D_ACCESSOR_ATTRIBUTE("Continuous Physics", GetContinuousPhysics, SetContinuousPhysics, bool, false, AM_DEFAULT);
+    // ATOMIC END
+
     URHO3D_ACCESSOR_ATTRIBUTE("Sub Stepping", GetSubStepping, SetSubStepping, bool, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Gravity", GetGravity, SetGravity, Vector2, DEFAULT_GRAVITY, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Auto Clear Forces", GetAutoClearForces, SetAutoClearForces, bool, false, AM_DEFAULT);
