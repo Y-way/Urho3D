@@ -45,6 +45,10 @@
 
 #include "../DebugNew.h"
 
+// ATOMIC BEGIN
+#include "PrefabComponent.h"
+// ATOMIC END
+
 namespace Urho3D
 {
 
@@ -111,7 +115,7 @@ void Scene::RegisterObject(Context* context)
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Variable Names", GetVarNamesAttr, SetVarNamesAttr, String, String::EMPTY, AM_FILE | AM_NOEDIT);
 }
 
-bool Scene::Load(Deserializer& source)
+bool Scene::Load(Deserializer& source, bool setInstanceDefault)
 {
     URHO3D_PROFILE(LoadScene);
 
@@ -129,7 +133,7 @@ bool Scene::Load(Deserializer& source)
     Clear();
 
     // Load the whole scene, then perform post-load if successfully loaded
-    if (Node::Load(source))
+    if (Node::Load(source, setInstanceDefault))
     {
         FinishLoading(&source);
         return true;
@@ -162,7 +166,7 @@ bool Scene::Save(Serializer& dest) const
         return false;
 }
 
-bool Scene::LoadXML(const XMLElement& source)
+bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
 {
     URHO3D_PROFILE(LoadSceneXML);
 
@@ -170,7 +174,7 @@ bool Scene::LoadXML(const XMLElement& source)
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadXML(source))
+    if (Node::LoadXML(source, setInstanceDefault))
     {
         FinishLoading(nullptr);
         return true;
@@ -179,7 +183,7 @@ bool Scene::LoadXML(const XMLElement& source)
         return false;
 }
 
-bool Scene::LoadJSON(const JSONValue& source)
+bool Scene::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 {
     URHO3D_PROFILE(LoadSceneJSON);
 
@@ -187,7 +191,7 @@ bool Scene::LoadJSON(const JSONValue& source)
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadJSON(source))
+    if (Node::LoadJSON(source, setInstanceDefault))
     {
         FinishLoading(nullptr);
         return true;
@@ -1536,6 +1540,10 @@ void RegisterSceneLibrary(Context* context)
     SmoothedTransform::RegisterObject(context);
     UnknownComponent::RegisterObject(context);
     SplinePath::RegisterObject(context);
+
+    // ATOMIC BEGIN
+    PrefabComponent::RegisterObject(context);
+    // ATOMIC END
 }
 
 }

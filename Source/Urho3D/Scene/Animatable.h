@@ -72,12 +72,12 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Load from XML data. Return true if successful.
-    bool LoadXML(const XMLElement& source) override;
+    /// Load from XML data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
+    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false);
     /// Save as XML data. Return true if successful.
     bool SaveXML(XMLElement& dest) const override;
-    /// Load from JSON data. Return true if successful.
-    bool LoadJSON(const JSONValue& source) override;
+    /// Load from JSON data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
+    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false);
     /// Save as JSON data. Return true if successful.
     bool SaveJSON(JSONValue& dest) const override;
 

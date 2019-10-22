@@ -45,8 +45,10 @@ static unsigned RemapAttributeIndex(const Vector<AttributeInfo>* attributes, con
     for (unsigned i = 0; i < attributes->Size(); ++i)
     {
         const AttributeInfo& attr = attributes->At(i);
-        // Compare accessor to avoid name string compare
+        // Compare either the accessor or offset to avoid name string compare
         if (attr.accessor_.Get() && attr.accessor_.Get() == netAttr.accessor_.Get())
+            return i;
+        else if (!attr.accessor_.Get() && attr.offset_ == netAttr.offset_)
             return i;
     }
 
@@ -75,9 +77,8 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
         return;
     }
 
-    // Get the destination address
-    assert(attr.ptr_);
-    void* dest = attr.ptr_;
+    // Calculate the destination address
+    void* dest = attr.ptr_ ? attr.ptr_ : reinterpret_cast<unsigned char*>(this) + attr.offset_;
 
     switch (attr.type_)
     {
@@ -184,9 +185,8 @@ void Serializable::OnGetAttribute(const AttributeInfo& attr, Variant& dest) cons
         return;
     }
 
-    // Get the source address
-    assert(attr.ptr_);
-    const void* src = attr.ptr_;
+    // Calculate the source address
+    const void* src = attr.ptr_ ? attr.ptr_ : reinterpret_cast<const unsigned char*>(this) + attr.offset_;
 
     switch (attr.type_)
     {
@@ -290,7 +290,7 @@ const Vector<AttributeInfo>* Serializable::GetNetworkAttributes() const
     return networkState_ ? networkState_->attributes_ : context_->GetNetworkAttributes(GetType());
 }
 
-bool Serializable::Load(Deserializer& source)
+bool Serializable::Load(Deserializer& source, bool setInstanceDefault)
 {
     const Vector<AttributeInfo>* attributes = GetAttributes();
     if (!attributes)
@@ -310,6 +310,9 @@ bool Serializable::Load(Deserializer& source)
 
         Variant varValue = source.ReadVariant(attr.type_);
         OnSetAttribute(attr, varValue);
+
+        if (setInstanceDefault)
+            SetInstanceDefault(attr.name_, varValue);
     }
 
     return true;
@@ -341,7 +344,7 @@ bool Serializable::Save(Serializer& dest) const
     return true;
 }
 
-bool Serializable::LoadXML(const XMLElement& source)
+bool Serializable::LoadXML(const XMLElement& source, bool setInstanceDefault)
 {
     if (source.IsNull())
     {
@@ -395,7 +398,12 @@ bool Serializable::LoadXML(const XMLElement& source)
                     varValue = attrElem.GetVariantValue(attr.type_);
 
                 if (!varValue.IsEmpty())
+                {
                     OnSetAttribute(attr, varValue);
+
+                    if (setInstanceDefault)
+                        SetInstanceDefault(attr.name_, varValue);
+                }
 
                 startIndex = (i + 1) % attributes->Size();
                 break;
@@ -416,7 +424,7 @@ bool Serializable::LoadXML(const XMLElement& source)
     return true;
 }
 
-bool Serializable::LoadJSON(const JSONValue& source)
+bool Serializable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 {
     if (source.IsNull())
     {
@@ -483,7 +491,12 @@ bool Serializable::LoadJSON(const JSONValue& source)
                     varValue = value.GetVariantValue(attr.type_);
 
                 if (!varValue.IsEmpty())
+                {
                     OnSetAttribute(attr, varValue);
+
+                    if (setInstanceDefault)
+                        SetInstanceDefault(attr.name_, varValue);
+                }
 
                 startIndex = (i + 1) % attributes->Size();
                 break;
