@@ -23,7 +23,6 @@
 #include "../Precompiled.h"
 
 #include "../Core/Profiler.h"
-#include "../Core/StringUtils.h"
 
 #include <cstdio>
 
@@ -32,13 +31,13 @@
 namespace Urho3D
 {
 
-Profiler::Profiler(Context* context)
-    : Object(context)
+Profiler::Profiler(Context* context) :
+    Object(context),
+    current_(nullptr),
+    root_(nullptr),
+    intervalFrames_(0)
 {
-    SetEnabled(true);
-#if !URHO3D_PROFILING
-    enableEventProfiling_ = false;
-#endif
+    current_ = root_ = new ProfilerBlock(nullptr, "RunFrame");
 }
 
 Profiler::~Profiler()
@@ -47,121 +46,99 @@ Profiler::~Profiler()
     root_ = nullptr;
 }
 
-void Profiler::SetEnabled(bool enabled)
+void Profiler::BeginFrame()
 {
-#if URHO3D_PROFILING
-    ::profiler::setEnabled(enabled);
-#endif
+    // End the previous frame if any
+    if (root_->count_)
+        EndFrame();
+
+    root_->Begin();
 }
 
-bool Profiler::GetEnabled() const
+void Profiler::EndFrame()
 {
-#if URHO3D_PROFILING
-    return ::profiler::isEnabled();
-#else
-    return false;
-#endif
+    EndBlock();
+    ++intervalFrames_;
+    root_->EndFrame();
+    current_ = root_;
 }
 
-void Profiler::StartListen(unsigned short port)
+void Profiler::BeginInterval()
 {
-#if URHO3D_PROFILING
-    ::profiler::startListen(port);
-#endif
+    root_->BeginInterval();
+    intervalFrames_ = 0;
 }
 
-void Profiler::StopListen()
+const String& Profiler::PrintData(bool showUnused, bool showTotal, unsigned maxDepth) const
 {
-#if URHO3D_PROFILING
-    ::profiler::stopListen();
-#endif
-}
+    static String output;
 
-bool Profiler::GetListening() const
-{
-#if URHO3D_PROFILING
-    return ::profiler::isListening();
-#else
-    return false;
-#endif
-}
-
-void Profiler::SetEventTracingEnabled(bool enable)
-{
-#if URHO3D_PROFILING
-    ::profiler::setEventTracingEnabled(enable);
-#endif
-}
-
-bool Profiler::GetEventTracingEnabled()
-{
-#if URHO3D_PROFILING
-    return ::profiler::isEventTracingEnabled();
-#else
-    return false;
-#endif
-}
-
-void Profiler::SetLowPriorityEventTracing(bool isLowPriority)
-{
-#if URHO3D_PROFILING
-    ::profiler::setLowPriorityEventTracing(isLowPriority);
-#endif
-}
-
-bool Profiler::GetLowPriorityEventTracing()
-{
-#if URHO3D_PROFILING
-    return ::profiler::isLowPriorityEventTracing();
-#else
-    return false;
-#endif
-}
-
-void Profiler::SaveProfilerData(const String& filePath)
-{
-#if URHO3D_PROFILING
-    ::profiler::dumpBlocksToFile(filePath.CString());
-#endif
-}
-
-void Profiler::SetEventProfilingEnabled(bool enabled)
-{
-#if URHO3D_PROFILING
-    enableEventProfiling_ = enabled;
-#endif
-}
-
-bool Profiler::GetEventProfilingEnabled() const
-{
-    return enableEventProfiling_;
-}
-
-void Profiler::BeginBlock(const char* name, const char* file, int line, unsigned int argb, unsigned char status)
-{
-#if URHO3D_PROFILING
-    // Line used as starting hash value for efficiency.
-    // This is likely to not play well with hot code reload.
-    unsigned hash = StringHash::Calculate(file, (unsigned)line);
-    HashMap<unsigned, ::profiler::BaseBlockDescriptor*>::Iterator it = blockDescriptorCache_.Find(hash);
-    const ::profiler::BaseBlockDescriptor* desc = 0;
-    if (it == blockDescriptorCache_.End())
-    {
-        String uniqueName = ToString("%s:%d", file, line);
-        desc = ::profiler::registerDescription((::profiler::EasyBlockStatus)status, uniqueName.CString(), name, file,
-                                               line, ::profiler::BLOCK_TYPE_BLOCK, argb, true);
-    }
+    if (!showTotal)
+        output  = "Block                            Cnt     Avg      Max     Frame     Total\n\n";
     else
-        desc = it->second_;
-    ::profiler::beginNonScopedBlock(desc, name);
-#endif
+    {
+        output  = "Block                                       Last frame                       Whole execution time\n\n";
+        output += "                                 Cnt     Avg      Max      Total      Cnt      Avg       Max        Total\n\n";
+    }
+
+    if (!maxDepth)
+        maxDepth = 1;
+
+    PrintData(root_, output, 0, maxDepth, showUnused, showTotal);
+
+    return output;
 }
 
-void Profiler::EndBlock()
+void Profiler::PrintData(ProfilerBlock* block, String& output, unsigned depth, unsigned maxDepth, bool showUnused,
+    bool showTotal) const
 {
-#if URHO3D_PROFILING
-    ::profiler::endBlock();
-#endif
+    static const int LINE_MAX_LENGTH = 256;
+    static const int NAME_MAX_LENGTH = 30;
+
+    char line[LINE_MAX_LENGTH];
+    char indentedName[LINE_MAX_LENGTH];
+
+    if (depth >= maxDepth)
+        return;
+
+    // Do not print any block that does not collect critical data
+    if (showUnused || block->intervalCount_ || (showTotal && block->totalCount_))
+    {
+        memset(indentedName, ' ', NAME_MAX_LENGTH);
+        indentedName[depth++] = 0;
+        strncat(indentedName, block->name_, NAME_MAX_LENGTH - depth);
+        indentedName[strlen(indentedName)] = ' ';
+        indentedName[NAME_MAX_LENGTH] = 0;
+
+        if (!showTotal)
+        {
+            float avg = (float)block->intervalTime_ / block->intervalCount_ / 1000.0f;
+            float max = block->intervalMaxTime_ / 1000.0f;
+            float frame = (float)block->intervalTime_ / (intervalFrames_ ? intervalFrames_ : 1) / 1000.0f;
+            float all = block->intervalTime_ / 1000.0f;
+
+            sprintf(line, "%s %5u %8.3f %8.3f %8.3f %9.3f\n", indentedName, Min(block->intervalCount_, 99999U),
+                avg, max, frame, all);
+        }
+        else
+        {
+            float avg = (block->frameCount_ ? (float)block->frameTime_ / block->frameCount_ : 0.0f) / 1000.0f;
+            float max = block->frameMaxTime_ / 1000.0f;
+            float all = block->frameTime_ / 1000.0f;
+
+            float totalAvg = (float)block->totalTime_ / block->totalCount_ / 1000.0f;
+            float totalMax = block->totalMaxTime_ / 1000.0f;
+            float totalAll = block->totalTime_ / 1000.0f;
+
+            sprintf(line, "%s %5u %8.3f %8.3f %9.3f  %7u %9.3f %9.3f %11.3f\n", indentedName, Min(block->frameCount_, 99999U),
+                avg, max, all, Min(block->totalCount_, 99999U), totalAvg, totalMax, totalAll);
+        }
+
+        output += String(line);
+    }
+
+    for (PODVector<ProfilerBlock*>::ConstIterator i = block->children_.Begin(); i != block->children_.End(); ++i)
+        PrintData(*i, output, depth, maxDepth, showUnused, showTotal);
 }
 
 }

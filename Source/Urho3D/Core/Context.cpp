@@ -24,9 +24,6 @@
 
 #include "../Core/Context.h"
 #include "../Core/EventProfiler.h"
-// ATOMIC BEGIN
-#include "../Core/Profiler.h"
-// ATOMIC END
 #include "../IO/Log.h"
 
 #ifndef MINI_URHO
@@ -124,10 +121,7 @@ void RemoveNamedAttribute(HashMap<StringHash, Vector<AttributeInfo> >& attribute
 }
 
 Context::Context() :
-    eventHandler_(nullptr),
-// ATOMIC BEGIN
-    editorContext_(false)
-// ATOMIC END
+    eventHandler_(nullptr)
 {
 #ifdef __ANDROID__
     // Always reset the random seed on Android, as the Urho3D library might not be unloaded between runs
@@ -157,16 +151,14 @@ Context::~Context()
     eventDataMaps_.Clear();
 }
 
-// ATOMIC BEGIN
-SharedPtr<Object> Context::CreateObject(StringHash objectType, const XMLElement& source)
+SharedPtr<Object> Context::CreateObject(StringHash objectType)
 {
     HashMap<StringHash, SharedPtr<ObjectFactory> >::ConstIterator i = factories_.Find(objectType);
     if (i != factories_.End())
-        return i->second_->CreateObject(source);
+        return i->second_->CreateObject();
     else
         return SharedPtr<Object>();
 }
-// ATOMIC END
 
 void Context::RegisterFactory(ObjectFactory* factory)
 {
@@ -389,13 +381,9 @@ Object* Context::GetEventSender() const
 
 const String& Context::GetTypeName(StringHash objectType) const
 {
-    // ATOMIC BEGIN
-
     // Search factories to find the hash-to-name mapping
     HashMap<StringHash, SharedPtr<ObjectFactory> >::ConstIterator i = factories_.Find(objectType);
-    return i != factories_.End() ? i->second_->GetFactoryTypeName() : String::EMPTY;
-    // return i != factories_.End() ? i->second_->GetTypeName() : String::EMPTY;
-    // ATOMIC END
+    return i != factories_.End() ? i->second_->GetTypeName() : String::EMPTY;
 }
 
 AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)

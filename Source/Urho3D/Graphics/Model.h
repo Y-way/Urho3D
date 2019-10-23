@@ -104,12 +104,6 @@ struct GeometryDesc
     unsigned indexCount_;
 };
 
-// ATOMIC BEGIN
-
-static const unsigned MODEL_VERSION = 1;
-
-// ATOMIC END
-
 /// 3D model resource.
 class URHO3D_API Model : public ResourceWithMetadata
 {
@@ -207,14 +201,6 @@ public:
     /// Return vertex buffer morph range vertex count.
     unsigned GetMorphRangeCount(unsigned bufferIndex) const;
 
-    // ATOMIC BEGIN
-
-    bool SetGeometryName(unsigned index, const String& name);
-    const String& GetGeometryName(unsigned index) const;
-    const Vector<String>& GetGeometryNames() const { return geometryNames_; }
-
-    // ATOMIC END
-
 private:
     /// Bounding box.
     BoundingBox boundingBox_;
@@ -242,11 +228,6 @@ private:
     Vector<IndexBufferDesc> loadIBData_;
     /// Geometry definitions for asynchronous loading.
     Vector<PODVector<GeometryDesc> > loadGeometries_;
-
-    // ATOMIC BEGIN
-    Vector<String> geometryNames_;
-    // ATOMIC END
-
 };
 
 }

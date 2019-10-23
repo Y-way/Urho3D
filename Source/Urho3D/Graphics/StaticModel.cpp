@@ -69,14 +69,6 @@ void StaticModel::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("LOD Bias", GetLodBias, SetLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
     URHO3D_ATTRIBUTE("Occlusion LOD Level", int, occlusionLodLevel_, M_MAX_UNSIGNED, AM_DEFAULT);
-
-    // ATOMIC BEGIN
-
-    URHO3D_ACCESSOR_ATTRIBUTE("Geometry Enabled", GetGeometryEnabledAttr, SetGeometryEnabledAttr, VariantVector,
-        Variant::emptyVariantVector, AM_FILE | AM_NOEDIT);
-
-    // ATOMIC END
-
 }
 
 void StaticModel::ProcessRayQuery(const RayOctreeQuery& query, PODVector<RayQueryResult>& results)
@@ -159,12 +151,6 @@ void StaticModel::UpdateBatches(const FrameInfo& frame)
         lodDistance_ = newLodDistance;
         CalculateLodLevels();
     }
-
-    // ATOMIC BEGIN
-    if (geometryDisabled_)
-        UpdateBatchesHideGeometry();
-    // ATOMIC END
-
 }
 
 Geometry* StaticModel::GetLodGeometry(unsigned batchIndex, unsigned level)
@@ -246,17 +232,6 @@ void StaticModel::SetModel(Model* model)
     if (model == model_)
         return;
 
-    // ATOMIC BEGIN
-    // If script erroneously calls StaticModel::SetModel on an AnimatedModel, warn and redirect
-    if (GetType() == AnimatedModel::GetTypeStatic())
-    {
-        URHO3D_LOGWARNING("StaticModel::SetModel() called on AnimatedModel. Redirecting to AnimatedModel::SetModel()");
-        AnimatedModel* animatedModel = static_cast<AnimatedModel*>(this);
-        animatedModel->SetModel(model);
-        return;
-    }
-    // ATOMIC END
-
     if (!node_)
     {
         URHO3D_LOGERROR("Can not set model while model component is not attached to a scene node");
@@ -283,12 +258,6 @@ void StaticModel::SetModel(Model* model)
             batches_[i].worldTransform_ = worldTransform;
             geometries_[i] = geometries[i];
             geometryData_[i].center_ = geometryCenters[i];
-
-            // ATOMIC BEGIN
-            geometryData_[i].enabled_ = true;
-            geometryData_[i].batchGeometry_ = nullptr;
-            // ATOMIC END
-
         }
 
         SetBoundingBox(model->GetBoundingBox());
@@ -480,143 +449,5 @@ void StaticModel::HandleModelReloadFinished(StringHash eventType, VariantMap& ev
     model_.Reset(); // Set null to allow to be re-set
     SetModel(currentModel);
 }
-
-// ATOMIC BEGIN
-
-bool StaticModel::GetGeometryVisible(const String& name)
-{
-    if (!model_)
-        return false;
-
-    const Vector<String>& names = model_->GetGeometryNames();
-
-    for (unsigned i = 0; i < names.Size(); i++)
-    {
-        if (name == names[i])
-            return geometryData_[i].enabled_;
-    }
-
-    return false;
-
-}
-
-void StaticModel::ShowGeometry(const String& name)
-{
-    if (!model_)
-        return;
-
-    const Vector<String>& names = model_->GetGeometryNames();
-
-    for (unsigned i = 0; i < names.Size(); i++)
-    {
-        if (name == names[i])
-        {
-            if (geometryData_[i].batchGeometry_ != nullptr)
-                batches_[i].geometry_ = geometryData_[i].batchGeometry_;
-
-            geometryData_[i].batchGeometry_ = nullptr;
-            geometryData_[i].enabled_ = true;
-        }
-    }
-
-    geometryDisabled_ = false;
-    for (unsigned i = 0; i < geometryData_.Size(); i++)
-    {
-        if (!geometryData_[i].enabled_)
-        {
-            geometryDisabled_ = true;
-            break;
-        }
-    }
-
-}
-
-void StaticModel::HideGeometry(const String& name)
-{
-    if (!model_)
-        return;
-
-    const Vector<String>& names = model_->GetGeometryNames();
-
-    for (unsigned i = 0; i < names.Size(); i++)
-    {
-        if (name == names[i])
-        {
-            geometryDisabled_ = true;
-
-            if (batches_[i].geometry_ != nullptr)
-                geometryData_[i].batchGeometry_ = batches_[i].geometry_;
-
-            geometryData_[i].enabled_ = false;
-        }
-    }
-}
-
-void StaticModel::SetGeometryEnabledAttr(const VariantVector& value)
-{
-    if (!value.Size() || value.Size() != geometryData_.Size())
-    {
-        geometryDisabled_ = false;
-        geometryEnabled_.Clear();
-        return;
-    }
-
-    bool init = !geometryEnabled_.Size();
-
-    geometryEnabled_ = value;
-
-    for (unsigned i = 0; i < geometryData_.Size(); i++)
-    {
-        geometryData_[i].enabled_ = geometryEnabled_[i].GetBool();
-        if (!geometryData_[i].enabled_)
-            geometryDisabled_ = true;
-        if (init)
-            geometryData_[i].batchGeometry_ = nullptr;
-    }
-
-}
-const VariantVector& StaticModel::GetGeometryEnabledAttr() const
-{
-    geometryEnabled_.Resize(geometryData_.Size());
-
-    geometryDisabled_ = false;
-    for (unsigned i = 0; i < geometryData_.Size(); i++)
-    {
-        geometryEnabled_[i] = geometryData_[i].enabled_;
-
-        if (!geometryData_[i].enabled_)
-            geometryDisabled_ = true;
-    }
-
-    return geometryEnabled_;
-}
-
-void StaticModel::UpdateBatchesHideGeometry()
-{
-    if (!geometryDisabled_ || !batches_.Size())
-        return;
-
-    for (unsigned i = 0; i < batches_.Size(); ++i)
-    {
-        SourceBatch* batch = &batches_[i];
-        StaticModelGeometryData* data = &geometryData_[i];
-
-        if (batch->geometry_)
-            data->batchGeometry_ = batch->geometry_;
-
-        if (data->enabled_ && !batch->geometry_)
-        {
-            batch->geometry_ = data->batchGeometry_;
-        }
-        else if (!data->enabled_ && batch->geometry_)
-        {
-            data->batchGeometry_ = batch->geometry_;
-            batch->geometry_ = nullptr;
-        }
-    }
-
-}
-
-// ATOMIC END
 
 }

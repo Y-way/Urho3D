@@ -32,12 +32,6 @@
 
 #include "../DebugNew.h"
 
-// ATOMIC BEGIN
-
-#include "../Container/HashMap.h"
-
-// ATOMIC END
-
 namespace Urho3D
 {
 
@@ -64,10 +58,6 @@ StringHash::StringHash(const char* str) noexcept :
 #ifdef URHO3D_HASH_DEBUG
     Urho3D::GetGlobalStringHashRegister().RegisterString(*this, str);
 #endif
-
-#if URHO3D_PROFILING
-    RegisterSignificantString(str, *this);
-#endif
 }
 
 StringHash::StringHash(const String& str) noexcept :
@@ -75,9 +65,6 @@ StringHash::StringHash(const String& str) noexcept :
 {
 #ifdef URHO3D_HASH_DEBUG
     Urho3D::GetGlobalStringHashRegister().RegisterString(*this, str.CString());
-#endif
-#if URHO3D_PROFILING
-    RegisterSignificantString(str, *this);
 #endif
 }
 
@@ -118,54 +105,5 @@ String StringHash::Reverse() const
     return String::EMPTY;
 #endif
 }
-
-// ATOMIC BEGIN
-
-// Lookup for significant strings, not a member of StringHash so don't need to drag hashmap into header
-static HashMap<StringHash, String>* gSignificantLookup = 0;
-
-StringHash StringHash::RegisterSignificantString(const String& str)
-{
-    StringHash hash(str.CString());
-    RegisterSignificantString(str.CString(), hash);
-    return hash;
-}
-
-void StringHash::RegisterSignificantString(const char* str, StringHash hash)
-{
-    if (!gSignificantLookup)
-        gSignificantLookup = new HashMap<StringHash, String>();
-
-    if (gSignificantLookup->Contains(hash))
-        return;
-
-    (*gSignificantLookup)[hash] = str;
-}
-
-StringHash StringHash::RegisterSignificantString(const char* str)
-{
-    StringHash hash(str);
-    RegisterSignificantString(str, hash);
-    return hash;
-}
-
-void StringHash::RegisterSignificantString(const String& str, StringHash hash)
-{
-    RegisterSignificantString(str.CString(), hash);
-}
-
-bool StringHash::GetSignificantString(StringHash hash, String& strOut)
-{
-    if (!gSignificantLookup || !gSignificantLookup->TryGetValue(hash, strOut))
-    {
-        strOut.Clear();
-        return false;
-    }
-
-    return true;
-}
-
-// ATOMIC END
-
 
 }

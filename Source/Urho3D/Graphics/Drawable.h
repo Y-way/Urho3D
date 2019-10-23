@@ -117,9 +117,7 @@ class URHO3D_API Drawable : public Component
 
 public:
     /// Construct.
-// ATOMIC BEGIN
-    Drawable(Context* context, unsigned char drawableFlags = DRAWABLE_UNDEFINED);
-// ATOMIC END
+    Drawable(Context* context, unsigned char drawableFlags);
     /// Destruct.
     ~Drawable() override;
     /// Register object attributes. Drawable must be registered first.

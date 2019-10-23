@@ -188,17 +188,6 @@ public:
     /// Return a trigger point by index.
     AnimationTriggerPoint* GetTrigger(unsigned index);
 
-    // ATOMIC BEGIN
-
-    /// Set all animation tracks.
-    void SetTracks(const Vector<AnimationTrack>& tracks);
-
-    /// Return position of an animation track's keyframe at index.
-    Vector3 GetKeyFramePositionAtIndex(const String& name, unsigned keyIndex);
-
-    // ATOMIC END
-
-
 private:
     /// Animation name.
     String animationName_;

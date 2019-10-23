@@ -36,10 +36,6 @@ namespace Urho3D
 class XMLElement;
 class XMLFile;
 
-// ATOMIC BEGIN
-class ScriptRenderPathCommand;
-// ATOMIC END
-
 /// Rendering path command types.
 enum RenderCommandType
 {
@@ -193,8 +189,6 @@ struct URHO3D_API RenderPathCommand
 /// Rendering path definition. A sequence of commands (e.g. clear screen, draw objects with specific pass) that yields the scene rendering result.
 class URHO3D_API RenderPath : public RefCounted
 {
-    URHO3D_REFCOUNTED(RenderPath)
-
 public:
     /// Construct.
     RenderPath();
@@ -254,13 +248,6 @@ public:
     Vector<RenderTargetInfo> renderTargets_;
     /// Rendering commands.
     Vector<RenderPathCommand> commands_;
-
-    // ATOMIC BEGIN
-    /// Gets the render command at specified index, note SetCommand must be called to update the RenderPath with any changes
-    bool GetCommand(unsigned index, ScriptRenderPathCommand* dst);
-    /// Sets the render command at specified index
-    bool SetCommand(unsigned index, ScriptRenderPathCommand* src);
-    // ATOMIC END
 };
 
 }

@@ -37,8 +37,6 @@ class URHO3D_API RenderSurface : public RefCounted
     friend class Texture2DArray;
     friend class TextureCube;
 
-    URHO3D_REFCOUNTED(RenderSurface)
-
 public:
     /// Construct with parent texture.
     explicit RenderSurface(Texture* parentTexture);
@@ -125,15 +123,8 @@ public:
     void SetResolveDirty(bool enable) { resolveDirty_ = enable; }
 
 private:
-
-// ATOMIC BEGIN
-     
-    /// ATOMIC: changing to WeakPtr to prevent double release when parentTexture is deleted first
     /// Parent texture.
-    WeakPtr<Texture> parentTexture_;
-
-// URHO3D END
-
+    Texture* parentTexture_;
 
     union
     {

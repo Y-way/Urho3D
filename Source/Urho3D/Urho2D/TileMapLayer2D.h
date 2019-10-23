@@ -101,10 +101,6 @@ public:
     /// Return image node (for image layer only).
     Node* GetImageNode() const;
 
-    // ATOMIC BEGIN
-    const String& GetName() const;
-    // ATOMIC END
-
 private:
     /// Set tile layer.
     void SetTileLayer(const TmxTileLayer2D* tileLayer);

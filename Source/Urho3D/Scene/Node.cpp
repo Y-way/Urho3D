@@ -93,7 +93,7 @@ void Node::RegisterObject(Context* context)
         AM_NET | AM_NOEDIT);
 }
 
-bool Node::Load(Deserializer& source, bool setInstanceDefault)
+bool Node::Load(Deserializer& source)
 {
     SceneResolver resolver;
 
@@ -153,7 +153,7 @@ bool Node::Save(Serializer& dest) const
     return true;
 }
 
-bool Node::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool Node::LoadXML(const XMLElement& source)
 {
     SceneResolver resolver;
 
@@ -172,7 +172,7 @@ bool Node::LoadXML(const XMLElement& source, bool setInstanceDefault)
     return success;
 }
 
-bool Node::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool Node::LoadJSON(const JSONValue& source)
 {
     SceneResolver resolver;
 
@@ -219,15 +219,6 @@ bool Node::SaveXML(XMLElement& dest) const
         Node* node = children_[i];
         if (node->IsTemporary())
             continue;
-
-// ATOMIC BEGIN
-
-        // Can remove this check once bone nodes use temporary flag instead and new prefabs no longer use temporary flag.
-        // https://github.com/AtomicGameEngine/AtomicGameEngine/issues/780
-        if (node->HasTag("atomic_temporary"))
-            continue;
-
-// ATOMIC END
 
         XMLElement childElem = dest.CreateChild("node");
         if (!node->SaveXML(childElem))
@@ -918,8 +909,7 @@ void Node::RemoveChildren(bool removeReplicated, bool removeLocal, bool recursiv
         MarkReplicationDirty();
 }
 
-// ATOMIC BEGIN
-Component* Node::CreateComponentInternal(StringHash type, CreateMode mode, unsigned id, const XMLElement& source)
+Component* Node::CreateComponent(StringHash type, CreateMode mode, unsigned id)
 {
     // Do not attempt to create replicated components to local nodes, as that may lead to component ID overwrite
     // as replicated components are synced over
@@ -927,7 +917,7 @@ Component* Node::CreateComponentInternal(StringHash type, CreateMode mode, unsig
         mode = LOCAL;
 
     // Check that creation succeeds and that the object in fact is a component
-    SharedPtr<Component> newComponent = DynamicCast<Component>(context_->CreateObject(type, source));
+    SharedPtr<Component> newComponent = DynamicCast<Component>(context_->CreateObject(type));
     if (!newComponent)
     {
         URHO3D_LOGERROR("Could not create unknown component type " + type.ToString());
@@ -937,13 +927,6 @@ Component* Node::CreateComponentInternal(StringHash type, CreateMode mode, unsig
     AddComponent(newComponent, id, mode);
     return newComponent;
 }
-
-Component* Node::CreateComponent(StringHash type, CreateMode mode, unsigned id)
-{
-    return CreateComponentInternal(type, mode, id);
-}
-
-// ATOMIC END
 
 Component* Node::GetOrCreateComponent(StringHash type, CreateMode mode, unsigned id)
 {
@@ -1363,23 +1346,16 @@ void Node::GetComponents(PODVector<Component*>& dest, StringHash type, bool recu
 {
     dest.Clear();
 
-// ATOMIC BEGIN
-
-    bool all = type == Component::GetTypeStatic();
-
     if (!recursive)
     {
         for (Vector<SharedPtr<Component> >::ConstIterator i = components_.Begin(); i != components_.End(); ++i)
         {
-            if (all || (*i)->GetType() == type)
+            if ((*i)->GetType() == type)
                 dest.Push(*i);
         }
     }
     else
         GetComponentsRecursive(dest, type);
-
-    // ATOMIC END
-
 }
 
 bool Node::HasComponent(StringHash type) const
@@ -1628,10 +1604,8 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadC
     {
         String typeName = compElem.GetAttribute("type");
         unsigned compID = compElem.GetUInt("id");
-// ATOMIC BEGIN
         Component* newComponent = SafeCreateComponent(typeName, StringHash(typeName),
-            (mode == REPLICATED && Scene::IsReplicatedID(compID)) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID, compElem);
-// ATOMIC END
+            (mode == REPLICATED && Scene::IsReplicatedID(compID)) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
         if (newComponent)
         {
             resolver.AddComponent(compID, newComponent);
@@ -2083,9 +2057,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
     }
 }
 
-// ATOMIC BEGIN
-
-Component* Node::SafeCreateComponent(const String& typeName, StringHash type, CreateMode mode, unsigned id, const XMLElement& source)
+Component* Node::SafeCreateComponent(const String& typeName, StringHash type, CreateMode mode, unsigned id)
 {
     // Do not attempt to create replicated components to local nodes, as that may lead to component ID overwrite
     // as replicated components are synced over
@@ -2094,7 +2066,7 @@ Component* Node::SafeCreateComponent(const String& typeName, StringHash type, Cr
 
     // First check if factory for type exists
     if (!context_->GetTypeName(type).Empty())
-        return CreateComponentInternal(type, mode, id, source);
+        return CreateComponent(type, mode, id);
     else
     {
         URHO3D_LOGWARNING("Component type " + type.ToString() + " not known, creating UnknownComponent as placeholder");
@@ -2109,8 +2081,6 @@ Component* Node::SafeCreateComponent(const String& typeName, StringHash type, Cr
         return newComponent;
     }
 }
-
-// ATOMIC END
 
 void Node::UpdateWorldTransform() const
 {
@@ -2185,19 +2155,13 @@ void Node::GetChildrenWithComponentRecursive(PODVector<Node*>& dest, StringHash 
 
 void Node::GetComponentsRecursive(PODVector<Component*>& dest, StringHash type) const
 {
-    // ATOMIC BEGIN
-
-    bool all = type == Component::GetTypeStatic();
-
     for (Vector<SharedPtr<Component> >::ConstIterator i = components_.Begin(); i != components_.End(); ++i)
     {
-        if (all || (*i)->GetType() == type)
+        if ((*i)->GetType() == type)
             dest.Push(*i);
     }
     for (Vector<SharedPtr<Node> >::ConstIterator i = children_.Begin(); i != children_.End(); ++i)
         (*i)->GetComponentsRecursive(dest, type);
-
-    // ATOMIC END
 }
 
 void Node::GetChildrenWithTagRecursive(PODVector<Node*>& dest, const String& tag) const
@@ -2298,47 +2262,5 @@ void Node::HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& even
 
     UpdateAttributeAnimations(eventData[P_TIMESTEP].GetFloat());
 }
-
-// ATOMIC BEGIN
-
-void Node::GetChildrenWithName(PODVector<Node*>& dest, const String& name, bool recursive) const
-{
-    GetChildrenWithName(dest, StringHash(name), recursive);
-}
-
-void Node::GetChildrenWithName(PODVector<Node*>& dest, const char* name, bool recursive) const
-{
-    GetChildrenWithName(dest, StringHash(name), recursive);
-}
-
-void Node::GetChildrenWithName(PODVector<Node*>& dest, StringHash nameHash, bool recursive) const
-{
-    dest.Clear();
-
-    if (!recursive)
-    {
-        for (Vector<SharedPtr<Node> >::ConstIterator i = children_.Begin(); i != children_.End(); ++i)
-        {
-            if ((*i)->GetNameHash() == nameHash)
-                dest.Push(*i);
-        }
-    }
-    else
-        GetChildrenWithNameRecursive(dest, nameHash);
-}
-
-void Node::GetChildrenWithNameRecursive(PODVector<Node*>& dest, StringHash nameHash) const
-{
-    for (Vector<SharedPtr<Node> >::ConstIterator i = children_.Begin(); i != children_.End(); ++i)
-    {
-        Node* node = *i;
-        if (node->GetNameHash() == nameHash)
-            dest.Push(node);
-        if (!node->children_.Empty())
-            node->GetChildrenWithNameRecursive(dest, nameHash);
-    }
-}
-
-// ATOMIC END
 
 }

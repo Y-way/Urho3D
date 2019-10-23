@@ -26,10 +26,6 @@
 #include "../Core/Context.h"
 #include "../Core/CoreEvents.h"
 #include "../Core/EventProfiler.h"
-// ATOMIC BEGIN
-#include "../Core/Profiler.h"
-#include "../Engine/EngineDefs.h"
-// ATOMIC END
 #include "../Core/ProcessUtils.h"
 #include "../Core/WorkQueue.h"
 #include "../UI/Console.h"
@@ -45,25 +41,12 @@
 #ifdef URHO3D_IK
 #include "../IK/IK.h"
 #endif
-
-// ATOMIC BEGIN
-#include "../Resource/XMLFile.h"
-#include "../UI/SystemUI/SystemUI.h"
-#include "../UI/SystemUI/Console.h"
-#include "../UI/SystemUI/DebugHud.h"
-// ATOMIC END
-
 #ifdef URHO3D_NAVIGATION
 #include "../Navigation/NavigationMesh.h"
 #endif
 #ifdef URHO3D_NETWORK
 #include "../Network/Network.h"
 #endif
-// ATOMIC BEGIN
-#ifdef URHO3D_WEB
-#include "../Web/Web.h"
-#endif
-// ATOMIC END
 #ifdef URHO3D_DATABASE
 #include "../Database/Database.h"
 #endif
@@ -86,9 +69,6 @@
 
 #include "../DebugNew.h"
 
-// ATOMIC BEGIN
-static const float ENGINE_FPS_UPDATE_INTERVAL = 0.5f;
-// ATOMIC END
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 // From dbgint.h
@@ -133,14 +113,7 @@ Engine::Engine(Context* context) :
     initialized_(false),
     exiting_(false),
     headless_(false),
-    audioPaused_(false),
-    // ATOMIC BEGIN
-    paused_(false),
-    runNextPausedFrame_(false),
-    fpsFramesSinceUpdate_(.0f),
-    fpsTimeSinceUpdate_(ENGINE_FPS_UPDATE_INTERVAL),
-    fps_(0)
-    // ATOMIC END
+    audioPaused_(false)
 {
     // Register self as a subsystem
     context_->RegisterSubsystem(this);
@@ -160,11 +133,6 @@ Engine::Engine(Context* context) :
 #ifdef URHO3D_NETWORK
     context_->RegisterSubsystem(new Network(context_));
 #endif
-    // ATOMIC BEGIN
-#ifdef URHO3D_WEB
-    context_->RegisterSubsystem(new Web(context_));
-#endif
-    // ATOMIC END
 #ifdef URHO3D_DATABASE
     context_->RegisterSubsystem(new Database(context_));
 #endif
@@ -188,35 +156,6 @@ Engine::Engine(Context* context) :
 #endif
 
     SubscribeToEvent(E_EXITREQUESTED, URHO3D_HANDLER(Engine, HandleExitRequested));
-    // ATOMIC BEGIN
-    SubscribeToEvent(E_PAUSERESUMEREQUESTED, URHO3D_HANDLER(Engine, HandlePauseResumeRequested));
-    SubscribeToEvent(E_PAUSESTEPREQUESTED, URHO3D_HANDLER(Engine, HandlePauseStepRequested));
-
-    context_->engine_ = context_->GetSubsystem<Engine>();
-    context_->time_ = context_->GetSubsystem<Time>();
-    context_->workQueue_ = context_->GetSubsystem<WorkQueue>();
-#ifdef URHO3D_PROFILING
-    context_->profiler_ = context_->GetSubsystem<Profiler>();
-#endif
-    context_->fileSystem_ = context_->GetSubsystem<FileSystem>();
-#ifdef URHO3D_LOGGING
-    context_->log_ = context_->GetSubsystem<Log>();
-#endif
-    context_->cache_ = context_->GetSubsystem<ResourceCache>();
-    context_->l18n_ = context_->GetSubsystem<Localization>();
-#ifdef URHO3D_NETWORK
-    context_->network_ = context_->GetSubsystem<Network>();
-#endif
-#ifdef URHO3D_WEB
-    context_->web_ = context_->GetSubsystem<Web>();
-#endif
-#ifdef URHO3D_DATABASE
-    context_->db_ = context_->GetSubsystem<Database>();
-#endif
-    context_->input_ = context_->GetSubsystem<Input>();
-    context_->audio_ = context_->GetSubsystem<Audio>();
-    context_->ui_ = context_->GetSubsystem<UI>();
-    // ATOMIC END
 }
 
 Engine::~Engine() = default;
@@ -236,10 +175,6 @@ bool Engine::Initialize(const VariantMap& parameters)
     {
         context_->RegisterSubsystem(new Graphics(context_));
         context_->RegisterSubsystem(new Renderer(context_));
-        // ATOMIC BEGIN
-        context_->graphics_ = context_->GetSubsystem<Graphics>();
-        context_->renderer_ = context_->GetSubsystem<Renderer>();
-        // ATOMIC END
     }
     else
     {
@@ -265,18 +200,9 @@ bool Engine::Initialize(const VariantMap& parameters)
     // Set maximally accurate low res timer
     GetSubsystem<Time>()->SetTimerPeriod(1);
 
-    // Configure FPS limits
+    // Configure max FPS
     if (GetParameter(parameters, EP_FRAME_LIMITER, true) == false)
-    {
         SetMaxFps(0);
-    }
-    else
-    {
-        if (HasParameter(parameters, "MaxFps"))
-            SetMaxFps(GetParameter(parameters, "MaxFps").GetInt());
-        if (HasParameter(parameters, "MinFps"))
-            SetMinFps(GetParameter(parameters, "MinFps").GetInt());
-    }
 
     // Set amount of worker threads according to the available physical CPU cores. Using also hyperthreaded cores results in
     // unpredictable extra synchronization overhead. Also reserve one core for the main thread
@@ -384,27 +310,7 @@ bool Engine::Initialize(const VariantMap& parameters)
         context_->RegisterSubsystem(new EventProfiler(context_));
         EventProfiler::SetActive(true);
     }
-    // ATOMIC BEGIN
-    if (Profiler* profiler = GetSubsystem<Profiler>())
-    {
-        if (GetParameter(parameters, EP_PROFILER_LISTEN, false).GetBool())
-            profiler->StartListen((unsigned short)GetParameter(parameters, EP_PROFILER_PORT, PROFILER_DEFAULT_PORT).GetInt());
-        profiler->SetEventProfilingEnabled(GetParameter(parameters, EP_EVENT_PROFILER, true).GetBool());
-    }
-    // ATOMIC END
 #endif
-
-    // ATOMIC BEGIN
-    if (!headless_)
-    {
-        context_->RegisterSubsystem(new SystemUI(context_));
-        context_->systemUi_ = context_->GetSubsystem<SystemUI>();
-        context_->console_ = context_->GetSubsystem<Console>();
-        context_->debugHud_ = context_->GetSubsystem<DebugHud>();
-    }
-    context_->metrics_ = context_->GetSubsystem<Metrics>();
-    // ATOMIC END
-
     frameTimer_.Reset();
 
     URHO3D_LOGINFO("Initialized engine");
@@ -445,10 +351,7 @@ bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOl
             unsigned j = 0;
             for (; j < resourcePrefixPaths.Size(); ++j)
             {
-                // ATOMIC BEGIN
-                String packageName = resourcePrefixPaths[j] + resourcePaths[i] + PAK_EXTENSION;
-                // ATOMIC END
-
+                String packageName = resourcePrefixPaths[j] + resourcePaths[i] + ".pak";
                 if (fileSystem->FileExists(packageName))
                 {
                     if (cache->AddPackageFile(packageName))
@@ -465,9 +368,7 @@ bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOl
                         return false;
                 }
             }
-
-            // ATOMIC: Only fail when CoreData can't be opened and not headless
-            if (j == resourcePrefixPaths.Size() && !headless_)
+            if (j == resourcePrefixPaths.Size())
             {
                 URHO3D_LOGERRORF(
                     "Failed to add resource path '%s', check the documentation on how to set the 'resource prefix path'",
@@ -499,8 +400,7 @@ bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOl
                     return false;
             }
         }
-        // ATOMIC: Only fail when CoreData can't be opened and not headless
-        if (j == resourcePrefixPaths.Size() && !headless_)
+        if (j == resourcePrefixPaths.Size())
         {
             URHO3D_LOGERRORF(
                 "Failed to add resource package '%s', check the documentation on how to set the 'resource prefix path'",
@@ -540,9 +440,7 @@ bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOl
 
                 // Add all the found package files (non-recursive)
                 Vector<String> paks;
-                // ATOMIC BEGIN
-                fileSystem->ScanDir(paks, autoLoadPath, ToString("*.%s", PAK_EXTENSION), SCAN_FILES, false);
-                // ATOMIC END
+                fileSystem->ScanDir(paks, autoLoadPath, "*.pak", SCAN_FILES, false);
                 for (unsigned y = 0; y < paks.Size(); ++y)
                 {
                     String pak = paks[y];
@@ -570,10 +468,8 @@ bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOl
     return true;
 }
 
-// ATOMIC BEGIN
 void Engine::RunFrame()
 {
-    URHO3D_PROFILE(RunFrame);
     assert(initialized_);
 
     // If not headless, and the graphics subsystem no longer has a window open, assume we should exit
@@ -598,15 +494,10 @@ void Engine::RunFrame()
     }
 #endif
 
-    URHO3D_PROFILE(DoFrame);
     time->BeginFrame(timeStep_);
-    // check for exit again that comes in thru an event handler
-    if ( exiting_ ) // needed to prevent scripts running the
-        return;     // current frame update with null objects
 
-    // If paused, or pause when minimized -mode is in use, stop updates and audio as necessary
-    if ((paused_ && !runNextPausedFrame_) ||
-        (pauseMinimized_ && input->IsMinimized()))
+    // If pause when minimized -mode is in use, stop updates and audio as necessary
+    if (pauseMinimized_ && input->IsMinimized())
     {
         if (audio->IsPlaying())
         {
@@ -623,28 +514,14 @@ void Engine::RunFrame()
             audioPaused_ = false;
         }
 
-        // Only run one frame when stepping
-        runNextPausedFrame_ = false;
-
         Update();
-
     }
 
-    fpsTimeSinceUpdate_ += timeStep_;
-    ++fpsFramesSinceUpdate_;
-    if (fpsTimeSinceUpdate_ > ENGINE_FPS_UPDATE_INTERVAL)
-    {
-        fps_ = (int)(fpsFramesSinceUpdate_ / fpsTimeSinceUpdate_);
-        fpsFramesSinceUpdate_ = 0;
-        fpsTimeSinceUpdate_ = 0;
-    }
     Render();
-    URHO3D_PROFILE_END();
     ApplyFrameLimit();
 
     time->EndFrame();
 }
-// ATOMIC END
 
 Console* Engine::CreateConsole()
 {
@@ -664,9 +541,18 @@ Console* Engine::CreateConsole()
 
 DebugHud* Engine::CreateDebugHud()
 {
-// ATOMIC BEGIN
-    return 0;
-// ATOMIC END
+    if (headless_ || !initialized_)
+        return nullptr;
+
+    // Return existing debug HUD if possible
+    auto* debugHud = GetSubsystem<DebugHud>();
+    if (!debugHud)
+    {
+        debugHud = new DebugHud(context_);
+        context_->RegisterSubsystem(debugHud);
+    }
+
+    return debugHud;
 }
 
 void Engine::SetTimeStepSmoothing(int frames)
@@ -927,16 +813,6 @@ VariantMap Engine::ParseParameters(const Vector<String>& arguments)
                 ret[EP_HEADLESS] = true;
             else if (argument == "nolimit")
                 ret[EP_FRAME_LIMITER] = false;
-            else if (argument == "maxfps" && !value.Empty())
-            {
-                ret[EP_FPS_MAXIMIZED] = ToInt(value);
-                i++;
-            }
-            else if (argument == "minfps" && !value.Empty())
-            {
-                ret[EP_FPS_MINIMIZED] = ToInt(value);
-                i++;
-            }
             else if (argument == "flushgpu")
                 ret[EP_FLUSH_GPU] = true;
             else if (argument == "gl2")
@@ -978,8 +854,6 @@ VariantMap Engine::ParseParameters(const Vector<String>& arguments)
                 ret[EP_HIGH_DPI] = false;
             else if (argument == "s")
                 ret[EP_WINDOW_RESIZABLE] = true;
-            else if (argument == "hd")
-                ret[EP_HIGH_DPI] = true;
             else if (argument == "q")
                 ret[EP_LOG_QUIET] = true;
             else if (argument == "log" && !value.Empty())
@@ -1072,17 +946,6 @@ VariantMap Engine::ParseParameters(const Vector<String>& arguments)
             }
             else if (argument == "touch")
                 ret[EP_TOUCH_EMULATION] = true;
-            // ATOMIC BEGIN
-            else if (argument == "logname" && !value.Empty())
-            {
-                ret[EP_LOG_NAME] = value;
-                ++i;
-            }
-            else if (argument == "autometrics") // -autometrics
-            {
-                ret[EP_AUTO_METRICS] = true;
-            }
-            // ATOMIC END
 #ifdef URHO3D_TESTING
             else if (argument == "timeout" && !value.Empty())
             {
@@ -1130,48 +993,5 @@ void Engine::DoExit()
     emscripten_force_exit(EXIT_SUCCESS);    // Some how this is required to signal emrun to stop
 #endif
 }
-
-// ATOMIC BEGIN
-
-void Engine::SetPaused(bool paused)
-{
-    paused_ = paused;
-
-    using namespace UpdatesPaused;
-
-    // Updates paused event
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_PAUSED] = paused_;
-    SendEvent(E_UPDATESPAUSEDRESUMED, eventData);
-}
-
-void Engine::SetRunNextPausedFrame(bool run)
-{
-    runNextPausedFrame_ = run;
-}
-
-void Engine::HandlePauseResumeRequested(StringHash eventType, VariantMap& eventData)
-{
-    SetPaused(!IsPaused());
-}
-
-void Engine::HandlePauseStepRequested(StringHash eventType, VariantMap& eventData)
-{
-    if (IsPaused())
-    {
-        SetRunNextPausedFrame(true);
-    }
-}
-
-bool Engine::GetDebugBuild() const
-{
-#ifdef URHO3D_DEBUG
-    return true;
-#else
-    return false;
-#endif
-}
-
-// ATOMIC END
 
 }

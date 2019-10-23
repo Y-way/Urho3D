@@ -87,11 +87,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Return true if successful.
-    bool Load(Deserializer& source, bool setInstanceDefault = false) override;
+    bool Load(Deserializer& source) override;
     /// Load from XML data. Return true if successful.
-    bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    bool LoadXML(const XMLElement& source) override;
     /// Load from JSON data. Return true if successful.
-    bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    bool LoadJSON(const JSONValue& source) override;
     /// Save as binary data. Return true if successful.
     bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.
@@ -159,9 +159,9 @@ public:
 
     /// Set both position and rotation in parent space as an atomic operation. This is faster than setting position and rotation separately.
     void SetTransform(const Vector3& position, const Quaternion& rotation);
-    /// Set both position, rotation and uniform scale in parent space as an atomic operation.
+    /// Set position, rotation, and uniform scale in parent space as an atomic operation.
     void SetTransform(const Vector3& position, const Quaternion& rotation, float scale);
-    /// Set both position, rotation and scale in parent space as an atomic operation.
+    /// Set position, rotation, and scale in parent space as an atomic operation.
     void SetTransform(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
     /// Set node transformation in parent space as an atomic operation.
     void SetTransform(const Matrix3x4& matrix);
@@ -169,13 +169,13 @@ public:
     /// Set both position and rotation in parent space as an atomic operation (for Urho2D).
     void SetTransform2D(const Vector2& position, float rotation) { SetTransform(Vector3(position), Quaternion(rotation)); }
 
-    /// Set both position, rotation and uniform scale in parent space as an atomic operation (for Urho2D).
+    /// Set position, rotation, and uniform scale in parent space as an atomic operation (for Urho2D).
     void SetTransform2D(const Vector2& position, float rotation, float scale)
     {
         SetTransform(Vector3(position), Quaternion(rotation), scale);
     }
 
-    /// Set both position, rotation and scale in parent space as an atomic operation (for Urho2D).
+    /// Set position, rotation, and scale in parent space as an atomic operation (for Urho2D).
     void SetTransform2D(const Vector2& position, float rotation, const Vector2& scale)
     {
         SetTransform(Vector3(position), Quaternion(rotation), Vector3(scale, 1.0f));
@@ -211,9 +211,9 @@ public:
 
     /// Set both position and rotation in world space as an atomic operation.
     void SetWorldTransform(const Vector3& position, const Quaternion& rotation);
-    /// Set both position, rotation and uniform scale in world space as an atomic operation.
+    /// Set position, rotation, and uniform scale in world space as an atomic operation.
     void SetWorldTransform(const Vector3& position, const Quaternion& rotation, float scale);
-    /// Set both position, rotation and scale in world space as an atomic opration.
+    /// Set position, rotation, and scale in world space as an atomic opration.
     void SetWorldTransform(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
     /// Set position, rotation, and scale in world space as an atomic operation from a transformation matrix
     void SetWorldTransform(const Matrix3x4& worldTransform);
@@ -224,13 +224,13 @@ public:
         SetWorldTransform(Vector3(position), Quaternion(rotation));
     }
 
-    /// Set both position, rotation and uniform scale in world space as an atomic operation (for Urho2D).
+    /// Set position, rotation, and uniform scale in world space as an atomic operation (for Urho2D).
     void SetWorldTransform2D(const Vector2& position, float rotation, float scale)
     {
         SetWorldTransform(Vector3(position), Quaternion(rotation), scale);
     }
 
-    /// Set both position, rotation and scale in world space as an atomic opration (for Urho2D).
+    /// Set position, rotation, and scale in world space as an atomic opration (for Urho2D).
     void SetWorldTransform2D(const Vector2& position, float rotation, const Vector2& scale)
     {
         SetWorldTransform(Vector3(position), Quaternion(rotation), Vector3(scale, 1.0f));
@@ -633,49 +633,6 @@ public:
     /// Set local transform silently without marking the node & child nodes dirty. Used by animation code.
     void SetTransformSilent(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
 
-    // ATOMIC BEGIN
-
-    /// Return child scene nodes by name, optionally recursive
-    void GetChildrenWithName(PODVector<Node*>& dest, const String& name, bool recursive = false) const;
-    /// Return child scene nodes by name, optionally recursive
-    void GetChildrenWithName(PODVector<Node*>& dest, const char* name, bool recursive = false) const;
-    /// Return child scene nodes by name hash, optionally recursive
-    void GetChildrenWithName(PODVector<Node*>& dest, StringHash nameHash, bool recursive = false) const;
-
-    /// Scripting interface to set user data, the data type can be 
-    ///   Int, Bool, Float, Vector2, Vector3, Vector4, Quaternion
-    ///   String, Buffer, ResourceRef, ResourceRefList, IntRect,
-    ///   IntVector2, Matrix3,Matrix3x4, Matrix4, Double, Color
-    /// The data value must be formatted in the Variant type string format.
-    void SetVarFromString (const String& name, const String& vartype, const String& value) 
-    { 
-        vars_[name].FromString(vartype, value); 
-    }
-
-    /// Scripting interface to get user data as a string.
-    /// an empty string is returned if the entry name is not present.
-    String GetVarAsString (const String& name) const {
-        if ( IsVar(name) )
-            return vars_[name]->ToString();
-        return String::EMPTY;
-    }
-
-    /// Scripting interface to check if the user data entry exists
-    /// returns true if present, returns false if it is not present.
-    bool IsVar (const String& name) const {
-        return vars_.Contains(name);
-    }
-
-    /// Scripting interface to get user data type as a string
-    /// an empty string is returned if the entry name is not present.
-    String GetVarType (const String& name) const {
-         if ( IsVar(name) )
-            return vars_[name]->GetTypeName();
-         return String::EMPTY;
-   }
-
-    // ATOMIC END
-
 protected:
     /// Handle attribute animation added.
     void OnAttributeAnimationAdded() override;
@@ -687,12 +644,8 @@ protected:
 private:
     /// Set enabled/disabled state with optional recursion. Optionally affect the remembered enable state.
     void SetEnabled(bool enable, bool recursive, bool storeSelf);
-
-// ATOMIC BEGIN
     /// Create component, allowing UnknownComponent if actual type is not supported. Leave typeName empty if not known.
-    Component* SafeCreateComponent(const String& typeName, StringHash type, CreateMode mode, unsigned id, const XMLElement& source = XMLElement::EMPTY);
-// ATOMIC END
-
+    Component* SafeCreateComponent(const String& typeName, StringHash type, CreateMode mode, unsigned id);
     /// Recalculate the world transform.
     void UpdateWorldTransform() const;
     /// Remove child node by iterator.
@@ -748,15 +701,6 @@ private:
     Vector<WeakPtr<Component> > listeners_;
     /// Pointer to implementation.
     UniquePtr<NodeImpl> impl_;
-
-    // ATOMIC BEGIN
-
-    /// Return child nodes by name, recursively
-    void GetChildrenWithNameRecursive(PODVector<Node*>& dest, StringHash nameHash) const;
-
-    Component* CreateComponentInternal(StringHash type, CreateMode mode, unsigned id, const XMLElement& source = XMLElement::EMPTY);
-
-    // ATOMIC END
 
 protected:
     /// User variables.

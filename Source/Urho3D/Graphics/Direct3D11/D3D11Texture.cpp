@@ -203,21 +203,4 @@ void Texture::RegenerateLevels()
     levelsDirty_ = false;
 }
 
-// ATOMIC BEGIN
-
-// Satisfy script binding link
-
-unsigned Texture::GetExternalFormat(unsigned format)
-{
-    return 0;
-}
-
-unsigned Texture::GetDataType(unsigned format)
-{
-    return 0;
-}
-
-// ATOMIC END
-
-
 }

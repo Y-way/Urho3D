@@ -66,7 +66,7 @@ public:
     /// Set active sound listener for 3D sounds.
     void SetListener(SoundListener* listener);
     /// Stop any sound source playing a certain sound clip.
-    void StopSound(Sound* soundClip);
+    void StopSound(Sound* sound);
 
     /// Return byte size of one sample.
     unsigned GetSampleSize() const { return sampleSize_; }
@@ -115,12 +115,6 @@ public:
     /// Mix sound sources into the buffer.
     void MixOutput(void* dest, unsigned samples);
 
-    /// Final multiplier for audio byte conversion.
-#ifdef __EMSCRIPTEN__
-    static const int SAMPLE_SIZE_MUL = 2;
-#else
-    static const int SAMPLE_SIZE_MUL = 1;
-#endif
 private:
     /// Handle render update event.
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);

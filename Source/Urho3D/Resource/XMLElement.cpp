@@ -513,20 +513,7 @@ bool XMLElement::SetVariantMap(const VariantMap& value)
         XMLElement variantElem = CreateChild("variant");
         if (!variantElem)
             return false;
-
-// ATOMIC BEGIN
-        // Check for significant string, to make variant map XML more friendly than using a hash
-        String sigString;
-        if (StringHash::GetSignificantString(i->first_, sigString))
-        {
-            variantElem.SetString("name", sigString);
-        }
-        else
-        {
-            variantElem.SetUInt("hash", i->first_.Value());
-        }
-// ATOMIC END
-
+        variantElem.SetUInt("hash", i->first_.Value());
         variantElem.SetVariant(i->second_);
     }
 
@@ -950,14 +937,7 @@ VariantMap XMLElement::GetVariantMap() const
     {
         // If this is a manually edited map, user can not be expected to calculate hashes manually. Also accept "name" attribute
         if (variantElem.HasAttribute("name"))
-        {   
-            // ATOMIC BEGIN
-            const String name = variantElem.GetAttribute("name");
-            // register the name in the variant map, as significant for reverse lookup from hash
-            StringHash::RegisterSignificantString(name);            
-            ret[StringHash(name)] = variantElem.GetVariant();
-            // ATOMIC END
-        }
+            ret[StringHash(variantElem.GetAttribute("name"))] = variantElem.GetVariant();
         else if (variantElem.HasAttribute("hash"))
             ret[StringHash(variantElem.GetUInt("hash"))] = variantElem.GetVariant();
 

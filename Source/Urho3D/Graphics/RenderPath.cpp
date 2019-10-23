@@ -28,10 +28,6 @@
 #include "../IO/Log.h"
 #include "../Resource/XMLFile.h"
 
-// ATOMIC BEGIN
-#include "../Script/ScriptRenderPathCommand.h"
-// ATOMIC END
-
 #include "../DebugNew.h"
 
 #ifdef _MSC_VER
@@ -524,29 +520,5 @@ const Variant& RenderPath::GetShaderParameter(const String& name) const
 
     return Variant::EMPTY;
 }
-
-// ATOMIC BEGIN
-
-bool RenderPath::GetCommand(unsigned index, ScriptRenderPathCommand* dst)
-{
-    if (!dst || index >= commands_.Size())
-        return false;    
-
-    dst->renderPathCommand_ = commands_[index];
-
-    return true;
-}
-/// Sets the render command at specified index
-bool RenderPath::SetCommand(unsigned index, ScriptRenderPathCommand* src)
-{
-    if (!src || index >= commands_.Size())
-        return false;
-
-    SetCommand(index, src->renderPathCommand_);
-
-    return true;
-}
-
-// ATOMIC END
 
 }

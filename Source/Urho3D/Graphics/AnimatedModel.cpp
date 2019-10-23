@@ -125,28 +125,28 @@ void AnimatedModel::RegisterObject(Context* context)
         AM_DEFAULT | AM_NOEDIT);
 }
 
-bool AnimatedModel::Load(Deserializer& source, bool setInstanceDefault)
+bool AnimatedModel::Load(Deserializer& source)
 {
     loading_ = true;
-    bool success = Component::Load(source, setInstanceDefault);
+    bool success = Component::Load(source);
     loading_ = false;
 
     return success;
 }
 
-bool AnimatedModel::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool AnimatedModel::LoadXML(const XMLElement& source)
 {
     loading_ = true;
-    bool success = Component::LoadXML(source, setInstanceDefault);
+    bool success = Component::LoadXML(source);
     loading_ = false;
 
     return success;
 }
 
-bool AnimatedModel::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool AnimatedModel::LoadJSON(const JSONValue& source)
 {
     loading_ = true;
-    bool success = Component::LoadJSON(source, setInstanceDefault);
+    bool success = Component::LoadJSON(source);
     loading_ = false;
 
     return success;
@@ -155,56 +155,18 @@ bool AnimatedModel::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 void AnimatedModel::ApplyAttributes()
 {
     if (assignBonesPending_)
-    {
         AssignBoneNodes();
-
-// ATOMIC BEGIN
-
-        // initialize skinning matrices in batches
-
-        for (unsigned i = 0; i < batches_.Size(); ++i)
-        {
-            if (skinMatrices_.Size())
-            {
-                batches_[i].geometryType_ = GEOM_SKINNED;
-                // Check if model has per-geometry bone mappings
-                if (geometrySkinMatrices_.Size() && geometrySkinMatrices_[i].Size())
-                {
-                    batches_[i].worldTransform_ = &geometrySkinMatrices_[i][0];
-                    batches_[i].numWorldTransforms_ = geometrySkinMatrices_[i].Size();
-                }
-                // If not, use the global skin matrices
-                else
-                {
-                    batches_[i].worldTransform_ = &skinMatrices_[0];
-                    batches_[i].numWorldTransforms_ = skinMatrices_.Size();
-                }
-            }
-            else
-            {
-                batches_[i].geometryType_ = GEOM_STATIC;
-                batches_[i].worldTransform_ = &node_->GetWorldTransform();
-                batches_[i].numWorldTransforms_ = 1;
-            }
-        }
-
-// ATOMIC END
-
-    }
 }
 
 void AnimatedModel::ProcessRayQuery(const RayOctreeQuery& query, PODVector<RayQueryResult>& results)
 {
     // If no bones or no bone-level testing, use the StaticModel test
     RayQueryLevel level = query.level_;
-
-    // ATOMIC BEGIN
-    if ((level < RAY_TRIANGLE || !skeleton_.GetNumBones()) || context_->GetEditorContext())
+    if (level < RAY_TRIANGLE || !skeleton_.GetNumBones())
     {
         StaticModel::ProcessRayQuery(query, results);
         return;
     }
-    // ATOMIC END
 
     // Check ray hit distance to AABB before proceeding with bone-level tests
     if (query.ray_.HitDistance(GetWorldBoundingBox()) >= query.maxDistance_)
@@ -330,15 +292,6 @@ void AnimatedModel::UpdateBatches(const FrameInfo& frame)
         lodDistance_ = newLodDistance;
         CalculateLodLevels();
     }
-
-    // ATOMIC BEGIN
-
-    // Handle mesh hiding
-    if (geometryDisabled_)
-        UpdateBatchesHideGeometry();
-
-    // ATOMIC END
-
 }
 
 void AnimatedModel::UpdateGeometry(const FrameInfo& frame)
@@ -405,13 +358,6 @@ void AnimatedModel::SetModel(Model* model, bool createBones)
         {
             geometries_[i] = geometries[i];
             geometryData_[i].center_ = geometryCenters[i];
-
-            // ATOMIC BEGIN
-
-            geometryData_[i].enabled_ = true;
-            geometryData_[i].batchGeometry_ = 0;
-
-            // ATOMIC END
         }
 
         // Copy geometry bone mappings
@@ -753,15 +699,6 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
         return;
     }
 
-// ATOMIC BEGIN
-
-    // We don't create bones in editor for now until can address prefabs using temporary flag
-    // ie. prefab and bone nodes should use tags
-
-    bool dontCreateBonesHack = context_->GetEditorContext();
-
-// ATOMIC END
-
     if (isMaster_)
     {
         // Check if bone structure has stayed compatible (reloading the model.) In that case retain the old bones and animations
@@ -805,15 +742,9 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
         FinalizeBoneBoundingBoxes();
 
         Vector<Bone>& bones = skeleton_.GetModifiableBones();
-
-// ATOMIC BEGIN
         // Create scene nodes for the bones
-        if ((createBones && !dontCreateBonesHack)|| boneCreationOverride_)
+        if (createBones)
         {
-            // Remove "atomic_temporary" once prefabs no longer depend on the temporary flag (prefabs 2.0)
-            // https://github.com/AtomicGameEngine/AtomicGameEngine/issues/780
-            const String tempTag = "atomic_temporary";
-
             for (Vector<Bone>::Iterator i = bones.Begin(); i != bones.End(); ++i)
             {
                 // Create bones as local, as they are never to be directly synchronized over the network
@@ -822,15 +753,6 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
                 boneNode->SetTransform(i->initialPosition_, i->initialRotation_, i->initialScale_);
                 // Copy the model component's temporary status
                 boneNode->SetTemporary(IsTemporary());
-
-                // Rather mark the nodes as temporary, remove for prefabs 2.0
-                if (boneCreationOverride_)
-                {
-                    if(boneNode->GetScene() != NULL)
-                        boneNode->AddTag(tempTag);
-                }
-// ATOMIC END
-
                 i->node_ = boneNode;
             }
 
@@ -857,10 +779,9 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
         auto* master = node_->GetComponent<AnimatedModel>();
         if (master && master != this)
             master->FinalizeBoneBoundingBoxes();
-// ATOMIC BEGIN
-        if (createBones && !dontCreateBonesHack)
+
+        if (createBones)
         {
-// ATOMIC END
             Vector<Bone>& bones = skeleton_.GetModifiableBones();
             for (Vector<Bone>::Iterator i = bones.Begin(); i != bones.End(); ++i)
             {
@@ -1040,15 +961,7 @@ void AnimatedModel::OnWorldBoundingBoxUpdate()
     if (isMaster_)
     {
         // Note: do not update bone bounding box here, instead do it in either of the threaded updates
-
-        // ATOMIC BEGIN
-        // We don't create bones in the editor currently, so use model instead of bone bounds
-        // https://github.com/AtomicGameEngine/AtomicGameEngine/issues/1178
-        if (context_->GetEditorContext())
-            worldBoundingBox_ = boundingBox_.Transformed(node_->GetWorldTransform());
-        else
-            worldBoundingBox_ = boneBoundingBox_.Transformed(node_->GetWorldTransform());
-        // ATOMIC END
+        worldBoundingBox_ = boneBoundingBox_.Transformed(node_->GetWorldTransform());
     }
     else
     {
@@ -1373,13 +1286,7 @@ void AnimatedModel::ApplyAnimation()
     // (first AnimatedModel in a node)
     if (isMaster_)
     {
-
-        // ATOMIC BEGIN
-        // Do not reset the skeleton as this is causing some visual artifacts with transitions
-        // TODO: a reproduction case?  Perhaps this is an issue with specific exports/bone animations?
-        // skeleton_.ResetSilent();
-        // ATOMIC END
-
+        skeleton_.ResetSilent();
         for (Vector<SharedPtr<AnimationState> >::Iterator i = animationStates_.Begin(); i != animationStates_.End(); ++i)
             (*i)->Apply();
 
@@ -1529,15 +1436,5 @@ void AnimatedModel::HandleModelReloadFinished(StringHash eventType, VariantMap& 
     model_.Reset(); // Set null to allow to be re-set
     SetModel(currentModel);
 }
-
-// ATOMIC BEGIN
-
-Node* AnimatedModel::GetSkeletonBoneNode(const String & boneName)
-{
-    Bone* bone = skeleton_.GetBone(boneName);
-    return (bone) ? bone->node_ : NULL;
-}
-
-// ATOMIC END
 
 }

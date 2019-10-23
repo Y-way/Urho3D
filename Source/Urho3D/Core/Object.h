@@ -28,38 +28,11 @@
 #include <functional>
 #include <utility>
 
-// ATOMIC BEGIN
-#include "../Resource/XMLElement.h"
-// ATOMIC END
-
 namespace Urho3D
 {
 
 class Context;
 class EventHandler;
-
-// ATOMIC BEGIN
-class Engine;
-class Time;
-class WorkQueue;
-class Profiler;
-class FileSystem;
-class Log;
-class ResourceCache;
-class Localization;
-class Network;
-class Web;
-class Database;
-class Input;
-class Audio;
-class UI;
-class SystemUI;
-class Graphics;
-class Renderer;
-class Console;
-class DebugHud;
-class Metrics;
-// ATOMIC END
 
 /// Type info.
 class URHO3D_API TypeInfo
@@ -103,11 +76,6 @@ private:
         static Urho3D::StringHash GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
         static const Urho3D::String& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
         static const Urho3D::TypeInfo* GetTypeInfoStatic() { static const Urho3D::TypeInfo typeInfoStatic(#typeName, BaseClassName::GetTypeInfoStatic()); return &typeInfoStatic; } \
-        virtual Urho3D::StringHash GetBaseType() const { return GetBaseTypeStatic(); } \
-        virtual Urho3D::ClassID GetClassID() const { return GetClassIDStatic(); } \
-        static Urho3D::ClassID GetClassIDStatic() { static const int typeID = 0; return (Urho3D::ClassID) &typeID; } \
-        static Urho3D::StringHash GetBaseTypeStatic() { static const Urho3D::StringHash baseTypeStatic(#baseTypeName); return baseTypeStatic; }
-
 
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
 class URHO3D_API Object : public RefCounted
@@ -131,12 +99,6 @@ public:
 
     /// Return type info static.
     static const TypeInfo* GetTypeInfoStatic() { return nullptr; }
-    /// Check current type is type of specified type.
-    static bool IsTypeOf(StringHash type);
-    /// Check current type is type of specified type.
-    static bool IsTypeOf(const TypeInfo* typeInfo);
-    /// Check current type is type of specified class.
-    template<typename T> static bool IsTypeOf() { return IsTypeOf(T::GetTypeInfoStatic()); }
     /// Check current instance is type of specified type.
     bool IsInstanceOf(StringHash type) const;
     /// Check current instance is type of specified type.
@@ -209,25 +171,10 @@ public:
     void SetBlockEvents(bool block) { blockEvents_ = block; }
     /// Return sending and receiving events blocking status.
     bool GetBlockEvents() const { return blockEvents_; }
-    // ATOMIC BEGIN
-
-    virtual bool IsObject() const { return true; }
-
-    /// Unsubscribe from event for specific receiver (where the event handler isn't necessarily in the subscribed object)
-    void UnsubscribeFromEventReceiver(Object* receiver);
-
-    static ClassID GetClassIDStatic() { static const int typeID = 0; return (ClassID) &typeID; }
-    static const Urho3D::String& GetTypeNameStatic() { static const Urho3D::String typeNameStatic("Object"); return typeNameStatic; }
-    /// Send event with parameters to all subscribers.
-    void SendEvent(StringHash eventType, const VariantMap& eventData);
-    // ATOMIC END
 
 protected:
     /// Execution context.
     Context* context_;
-
-    void SendEventProfiled(StringHash eventType, VariantMap& eventData);
-    void SendEventNonProfiled(StringHash eventType, VariantMap& eventData);
 
 private:
     /// Find the first event handler with no specific sender.
@@ -251,8 +198,6 @@ template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetS
 /// Base class for object factories.
 class URHO3D_API ObjectFactory : public RefCounted
 {
-    URHO3D_REFCOUNTED(ObjectFactory)
-
 public:
     /// Construct.
     explicit ObjectFactory(Context* context) :
@@ -261,10 +206,8 @@ public:
         assert(context_);
     }
 
-// ATOMIC BEGIN
     /// Create an object. Implemented in templated subclasses.
-    virtual SharedPtr<Object> CreateObject(const XMLElement& source = XMLElement::EMPTY) = 0;
-// ATOMIC END
+    virtual SharedPtr<Object> CreateObject() = 0;
 
     /// Return execution context.
     Context* GetContext() const { return context_; }
@@ -275,8 +218,8 @@ public:
     /// Return type hash of objects created by this factory.
     StringHash GetType() const { return typeInfo_->GetType(); }
 
-    ///// Return type name of objects created by this factory.
-    const String& GetFactoryTypeName() const { return typeInfo_->GetTypeName(); }
+    /// Return type name of objects created by this factory.
+    const String& GetTypeName() const { return typeInfo_->GetTypeName(); }
 
 protected:
     /// Execution context.
@@ -297,7 +240,7 @@ public:
     }
 
     /// Create an object of the specific type.
-    SharedPtr<Object> CreateObject(const XMLElement& source = XMLElement::EMPTY) override { return SharedPtr<Object>(new T(context_)); }
+    SharedPtr<Object> CreateObject() override { return SharedPtr<Object>(new T(context_)); }
 };
 
 /// Internal helper class for invoking event handler functions.
@@ -414,16 +357,6 @@ private:
 
 /// Get register of event names.
 URHO3D_API StringHashRegister& GetEventNameRegister();
-/// Register event names.
-struct URHO3D_API EventNameRegistrar
-{
-    /// Register an event name for hash reverse mapping.
-    static StringHash RegisterEventName(const char* eventName);
-    /// Return Event name or empty string if not found.
-    static const String& GetEventName(StringHash eventID);
-    /// Return Event name map.
-    static HashMap<StringHash, String>& GetEventNameMap();
-};
 
 /// Describe an event's hash ID and begin a namespace in which to define its parameters.
 #define URHO3D_EVENT(eventID, eventName) static const Urho3D::StringHash eventID(Urho3D::GetEventNameRegister().RegisterString(#eventName)); namespace eventName
@@ -433,31 +366,5 @@ struct URHO3D_API EventNameRegistrar
 #define URHO3D_HANDLER(className, function) (new Urho3D::EventHandlerImpl<className>(this, &className::function))
 /// Convenience macro to construct an EventHandler that points to a receiver object and its member function, and also defines a userdata pointer.
 #define URHO3D_HANDLER_USERDATA(className, function, userData) (new Urho3D::EventHandlerImpl<className>(this, &className::function, userData))
-
-
-// ATOMIC BEGIN
-// Explicit template specializations for most commonly used engine subsystems. They sidestep HashMap lookup and return
-// subsystem pointer cached in Context object.
-template <> Engine* Object::GetSubsystem<Engine>() const;
-template <> Time* Object::GetSubsystem<Time>() const;
-template <> WorkQueue* Object::GetSubsystem<WorkQueue>() const;
-template <> Profiler* Object::GetSubsystem<Profiler>() const;
-template <> FileSystem* Object::GetSubsystem<FileSystem>() const;
-template <> Log* Object::GetSubsystem<Log>() const;
-template <> ResourceCache* Object::GetSubsystem<ResourceCache>() const;
-template <> Localization* Object::GetSubsystem<Localization>() const;
-template <> Network* Object::GetSubsystem<Network>() const;
-template <> Web* Object::GetSubsystem<Web>() const;
-template <> Database* Object::GetSubsystem<Database>() const;
-template <> Input* Object::GetSubsystem<Input>() const;
-template <> Audio* Object::GetSubsystem<Audio>() const;
-template <> UI* Object::GetSubsystem<UI>() const;
-template <> SystemUI* Object::GetSubsystem<SystemUI>() const;
-template <> Graphics* Object::GetSubsystem<Graphics>() const;
-template <> Renderer* Object::GetSubsystem<Renderer>() const;
-template <> Console* Object::GetSubsystem<Console>() const;
-template <> DebugHud* Object::GetSubsystem<DebugHud>() const;
-template <> Metrics* Object::GetSubsystem<Metrics>() const;
-// ATOMIC END
 
 }

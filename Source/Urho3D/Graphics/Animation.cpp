@@ -415,36 +415,4 @@ AnimationTriggerPoint* Animation::GetTrigger(unsigned index)
     return index < triggers_.Size() ? &triggers_[index] : nullptr;
 }
 
-// ATOMIC BEGIN
-
-/// Set all animation tracks.
-void Animation::SetTracks(const Vector<AnimationTrack>& tracks)
-{
-    tracks_.Clear();
-
-    for (Vector<AnimationTrack>::ConstIterator itr = tracks.Begin(); itr != tracks.End(); itr++)
-    {
-        tracks_[itr->name_] = *itr;
-    }
-
-
-}
-
-
-Vector3 Animation::GetKeyFramePositionAtIndex(const String & name, unsigned keyIndex)
-{
-    for (HashMap<StringHash, AnimationTrack>::ConstIterator i = tracks_.Begin(); i != tracks_.End(); ++i)
-    {
-        const AnimationTrack& track = i->second_;
-
-        if (track.name_ == name)
-        {
-            const AnimationKeyFrame& key = track.keyFrames_.At(keyIndex);
-            return key.position_;
-        }
-    }
-    return Vector3();
-}
-
-// ATOMIC END
 }

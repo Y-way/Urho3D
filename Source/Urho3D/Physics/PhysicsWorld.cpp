@@ -808,12 +808,20 @@ void PhysicsWorld::PreStep(float timeStep)
     SendEvent(E_PHYSICSPRESTEP, eventData);
 
     // Start profiling block for the actual simulation step
-    URHO3D_PROFILE_NONSCOPED("StepSimulation");
+#ifdef URHO3D_PROFILING
+    auto* profiler = GetSubsystem<Profiler>();
+    if (profiler)
+        profiler->BeginBlock("StepSimulation");
+#endif
 }
 
 void PhysicsWorld::PostStep(float timeStep)
 {
-    URHO3D_PROFILE_END();
+#ifdef URHO3D_PROFILING
+    auto* profiler = GetSubsystem<Profiler>();
+    if (profiler)
+        profiler->EndBlock();
+#endif
 
     SendCollisionEvents();
 

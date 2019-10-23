@@ -74,12 +74,6 @@ public:
     ResourceRef GetTmxFileAttr() const;
     ///
     Vector<SharedPtr<TileMapObject2D> > GetTileCollisionShapes(unsigned gid) const;
-    // ATOMIC BEGIN
-
-    TileMapLayer2D* GetLayerByName(const String& name) const;
-
-    // ATOMIC END
-
 private:
     /// Tmx file.
     SharedPtr<TmxFile2D> tmxFile_;

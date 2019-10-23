@@ -29,7 +29,6 @@
 #include "../IO/FileSystem.h"
 #include "../IO/Log.h"
 #include "../Math/AreaAllocator.h"
-#include "../Resource/Image.h"
 #include "../Resource/ResourceCache.h"
 #include "../Resource/XMLFile.h"
 #include "../Urho2D/AnimationSet2D.h"

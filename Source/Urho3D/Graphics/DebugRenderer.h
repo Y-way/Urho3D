@@ -168,17 +168,6 @@ public:
     /// Return whether has something to render.
     bool HasContent() const;
 
-    // ATOMIC BEGIN
-
-    /// Creates a grid on all axis
-    void CreateGrid(const Color& grid, bool depthTest, Vector3 position);
-
-    void CreateXAxisLines(unsigned gridColor, bool depthTest, int x, int y, int z);
-    void CreateZAxisLines(unsigned gridColor, bool depthTest, int x, int y, int z);
-
-    // ATOMIC END
-
-
 private:
     /// Handle end of frame. Clear debug geometry.
     void HandleEndFrame(StringHash eventType, VariantMap& eventData);
@@ -203,29 +192,6 @@ private:
     SharedPtr<VertexBuffer> vertexBuffer_;
     /// Line antialiasing flag.
     bool lineAntiAlias_;
-
-    // ATOMIC BEGIN
-
-    /// Positioning of grid lines point 1
-    Vector3 position1_;
-    /// Positioning of grid lines point 2
-    Vector3 position2_;
-    /// Positioning of grid lines point 3
-    Vector3 position3_;
-
-    /// Number of total grid lines
-    int numGridLines_;
-    /// Length of a grid line
-    int lineLength_;
-    /// Offset centres the grid
-    int offset_;
-    /// Scales the grid according to y-position of camera
-    int scale_;
-    /// The amount the scale gets incremented
-    int scaleIncrement_;
-
-    // ATOMIC END
-
 };
 
 }

@@ -110,35 +110,4 @@ void Texture::RegenerateLevels()
     levelsDirty_ = false;
 }
 
-// ATOMIC BEGIN
-
-// Satisfy script binding link
-
-unsigned Texture::GetSRGBFormat(unsigned format)
-{
-    return 0;
-}
-
-unsigned Texture::GetSRVFormat(unsigned format)
-{
-    return 0;
-}
-
-unsigned Texture::GetDSVFormat(unsigned format)
-{
-    return 0;
-}
-
-unsigned Texture::GetExternalFormat(unsigned format)
-{
-    return 0;
-}
-
-unsigned Texture::GetDataType(unsigned format)
-{
-    return 0;
-}
-
-// ATOMIC END
-
 }

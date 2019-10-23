@@ -221,10 +221,7 @@ bool JSONFile::Save(Serializer& dest, const String& indendation) const
     ToRapidjsonValue(document, root_, document.GetAllocator());
 
     StringBuffer buffer;
-    //PrettyWriter<StringBuffer> writer(buffer);
-// ATOMIC BEGIN
-    PrettyWriter<StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> > writer(buffer, &(document.GetAllocator()));
-// ATOMIC END
+    PrettyWriter<StringBuffer> writer(buffer);
     writer.SetIndent(!indendation.Empty() ? indendation.Front() : '\0', indendation.Length());
 
     document.Accept(writer);
@@ -253,26 +250,5 @@ String JSONFile::ToString(const String& indendation) const
     document.Accept(writer);
     return buffer.GetString();
 }
-
-// ATOMIC BEGIN
-
-bool JSONFile::ParseJSON(const String& json, JSONValue& value, bool reportError)
-{
-    rapidjson::Document document;
-    if (document.Parse<0>(json.CString()).HasParseError())
-    {
-        if (reportError)
-            URHO3D_LOGERRORF("Could not parse JSON data from string with error: %s", document.GetParseError());
-
-        return false;
-    }
-
-    ToJSONValue(value, document);
-
-    return true;
-
-}
-
-// ATOMIC END
 
 }

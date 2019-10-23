@@ -29,21 +29,9 @@
 namespace Urho3D
 {
 
-// ATOMIC BEGIN
-
-class GlobalEventListener
-{
-public:
-    virtual void BeginSendEvent(Context* context, Object* sender, StringHash eventType, VariantMap& eventData) = 0;
-    virtual void EndSendEvent(Context* context, Object* sender, StringHash eventType, VariantMap& eventData) = 0;
-};
-
-// ATOMIC END
-
 /// Tracking structure for event receivers.
 class URHO3D_API EventReceiverGroup : public RefCounted
 {
-    URHO3D_REFCOUNTED(EventReceiverGroup);
 public:
     /// Construct.
     EventReceiverGroup() :
@@ -79,8 +67,6 @@ class URHO3D_API Context : public RefCounted
 {
     friend class Object;
 
-    URHO3D_REFCOUNTED(Context)
-
 public:
     /// Construct.
     Context();
@@ -92,19 +78,14 @@ public:
     {
         return StaticCast<T>(CreateObject(T::GetTypeStatic()));
     }
-
-    // ATOMIC BEGIN
     /// Create an object by type hash. Return pointer to it or null if no factory found.
-    SharedPtr<Object> CreateObject(StringHash objectType, const XMLElement &source = XMLElement::EMPTY);
-    // ATOMIC END
-
-
+    SharedPtr<Object> CreateObject(StringHash objectType);
     /// Register a factory for an object type.
     void RegisterFactory(ObjectFactory* factory);
     /// Register a factory for an object type and specify the object category.
     void RegisterFactory(ObjectFactory* factory, const char* category);
     /// Register a subsystem.
-    void RegisterSubsystem(Object* subsystem);
+    void RegisterSubsystem(Object* object);
     /// Remove a subsystem.
     void RemoveSubsystem(StringHash objectType);
     /// Register object attribute.
@@ -222,41 +203,6 @@ public:
         return i != eventReceivers_.End() ? i->second_ : nullptr;
     }
 
-    // ATOMIC BEGIN
-
-    /// Get whether an Editor Context
-    bool GetEditorContext() { return editorContext_; }
-
-    /// Get whether an Editor Context
-    void SetEditorContext(bool editor) { editorContext_ = editor; }
-
-    // hook for listening into events
-    void AddGlobalEventListener(GlobalEventListener* listener) { globalEventListeners_.Push(listener); }
-    void RemoveGlobalEventListener(GlobalEventListener* listener) { globalEventListeners_.Erase(globalEventListeners_.Find(listener)); }
-
-    Engine* GetEngine() const { return engine_; }
-    Time* GetTime() const { return time_; }
-    WorkQueue* GetWorkQueue() const { return workQueue_; }
-    Profiler* GetProfiler() const { return profiler_; }
-    FileSystem* GetFileSystem() const { return fileSystem_; }
-    Log* GetLog() const { return log_; }
-    ResourceCache* GetResourceCache() const { return cache_; }
-    Localization* GetLocalization() const { return l18n_; }
-    Network* GetNetwork() const { return network_; }
-    Web* GetWeb() const { return web_; }
-    Database* GetDatabase() const { return db_; }
-    Input* GetInput() const { return input_; }
-    Audio* GetAudio() const { return audio_; }
-    UI* GetUI() const { return ui_; }
-    SystemUI* GetSystemUI() const { return systemUi_; }
-    Graphics* GetGraphics() const { return graphics_; }
-    Renderer* GetRenderer() const { return renderer_; }
-    Console* GetConsole() const { return console_; }
-    DebugHud* GetDebugHud() const { return debugHud_; }
-    Metrics* GetMetrics() const { return metrics_; }
-
-    // ATOMIC END
-
 private:
     /// Add event receiver.
     void AddEventReceiver(Object* receiver, StringHash eventType);
@@ -298,51 +244,6 @@ private:
     HashMap<String, Vector<StringHash> > objectCategories_;
     /// Variant map for global variables that can persist throughout application execution.
     VariantMap globalVars_;
-
-    // ATOMIC BEGIN
-
-    /// Begin event send.
-    void GlobalBeginSendEvent(Object* sender, StringHash eventType, VariantMap& eventData) {
-        for (unsigned i = 0; i < globalEventListeners_.Size(); i++)
-            globalEventListeners_[i]->BeginSendEvent(this, sender, eventType, eventData);
-        eventSenders_.Push(sender);
-    }
-
-    /// End event send. Clean up event receivers removed in the meanwhile.
-    void GlobalEndSendEvent(Object* sender, StringHash eventType, VariantMap& eventData) {
-        for (unsigned i = 0; i < globalEventListeners_.Size(); i++)
-            globalEventListeners_[i]->EndSendEvent(this, sender, eventType, eventData);
-        eventSenders_.Pop();
-    }
-
-    PODVector<GlobalEventListener*> globalEventListeners_;
-    bool editorContext_;
-
-    WeakPtr<Engine> engine_;
-    WeakPtr<Time> time_;
-    WeakPtr<WorkQueue> workQueue_;
-    WeakPtr<Profiler> profiler_;
-    WeakPtr<FileSystem> fileSystem_;
-    WeakPtr<Log> log_;
-    WeakPtr<ResourceCache> cache_;
-    WeakPtr<Localization> l18n_;
-    WeakPtr<Network> network_;
-    WeakPtr<Web> web_;
-    WeakPtr<Database> db_;
-    WeakPtr<Input> input_;
-    WeakPtr<Audio> audio_;
-    WeakPtr<UI> ui_;
-    WeakPtr<SystemUI> systemUi_;
-    WeakPtr<Graphics> graphics_;
-    WeakPtr<Renderer> renderer_;
-    WeakPtr<Console> console_;
-    WeakPtr<DebugHud> debugHud_;
-    WeakPtr<Metrics> metrics_;
-
-    friend class Engine;
-
-    // ATOMIC END
-
 };
 
 template <class T> void Context::RegisterFactory() { RegisterFactory(new ObjectFactoryImpl<T>(this)); }

@@ -61,8 +61,6 @@ class Serializable;
 /// Abstract base class for invoking attribute accessors.
 class URHO3D_API AttributeAccessor : public RefCounted
 {
-    URHO3D_REFCOUNTED(AttributeAccessor)
-
 public:
     /// Get the attribute.
     virtual void Get(const Serializable* ptr, Variant& dest) const = 0;

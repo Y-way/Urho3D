@@ -32,12 +32,6 @@ namespace Urho3D
 
 class XMLElement;
 
-// ATOMIC BEGIN
-class TmxObjectGroup2D;
-class CollisionShape2D;
-class Node;
-// ATOMIC END
-
 /// Orientation.
 enum Orientation2D
 {
@@ -110,8 +104,6 @@ enum TileMapObjectType2D
 /// Property set.
 class URHO3D_API PropertySet2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(PropertySet2D)
-
 public:
     PropertySet2D();
     ~PropertySet2D() override;
@@ -138,8 +130,6 @@ static const unsigned FLIP_ALL = FLIP_HORIZONTAL | FLIP_VERTICAL | FLIP_DIAGONAL
 /// Tile define.
 class URHO3D_API Tile2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(Tile2D)
-
 public:
     /// Construct.
     Tile2D();
@@ -160,13 +150,6 @@ public:
     /// Return property.
     const String& GetProperty(const String& name) const;
 
-    // ATOMIC BEGIN
-
-    /// Return Object Group.
-    TmxObjectGroup2D* GetObjectGroup() const;
-
-    // ATOMIC END
-
 private:
     friend class TmxTileLayer2D;
 
@@ -176,18 +159,11 @@ private:
     SharedPtr<Sprite2D> sprite_;
     /// Property set.
     SharedPtr<PropertySet2D> propertySet_;
-
-    // ATOMIC BEGIN
-    /// Object group (collision)
-    SharedPtr<TmxObjectGroup2D> objectGroup_;
-    // ATOMIC END
 };
 
 /// Tile map object.
 class URHO3D_API TileMapObject2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(TileMapObject2D)
-
 public:
     TileMapObject2D();
 
@@ -226,11 +202,6 @@ public:
     bool HasProperty(const String& name) const;
     /// Return property value.
     const String& GetProperty(const String& name) const;
-
-    // ATOMIC BEGIN
-    bool ValidCollisionShape() const;
-    CollisionShape2D* CreateCollisionShape(Node* node) const;
-    // ATOMIC END
 
 private:
     friend class TmxObjectGroup2D;

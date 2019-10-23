@@ -85,25 +85,6 @@ public:
     /// Return list of file names in the package.
     const Vector<String> GetEntryNames() const { return entries_.Keys(); }
 
-    // ATOMIC BEGIN
-
-    /// Return a file name in the package at the specified index
-    const String& GetEntryName(unsigned index) const 
-    {
-        unsigned nn = 0;
-        for (HashMap<String, PackageEntry>::ConstIterator j = entries_.Begin(); j != entries_.End(); ++j)
-        {
-            if (nn == index) return j->first_;
-            nn++;
-        }
-        return String::EMPTY; 
-    }
-
-
-    /// Scan package for specified files.
-    void Scan(Vector<String>& result, const String& pathName, const String& filter, bool recursive) const;
-    
-    // ATOMIC END
 private:
     /// File entries.
     HashMap<String, PackageEntry> entries_;

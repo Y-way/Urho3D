@@ -26,9 +26,6 @@
 #include "../Core/ProcessUtils.h"
 #include "../Core/Thread.h"
 #include "../IO/Log.h"
-// ATOMIC BEGIN
-#include "../Core/Profiler.h"
-// ATOMIC END
 
 #include "../DebugNew.h"
 
@@ -127,16 +124,6 @@ void Object::OnEvent(Object* sender, StringHash eventType, VariantMap& eventData
         nonSpecific->Invoke(eventData);
         context->SetEventHandler(nullptr);
     }
-}
-
-bool Object::IsTypeOf(StringHash type)
-{
-    return GetTypeInfoStatic()->IsTypeOf(type);
-}
-
-bool Object::IsTypeOf(const TypeInfo* typeInfo)
-{
-    return GetTypeInfoStatic()->IsTypeOf(typeInfo);
 }
 
 bool Object::IsInstanceOf(StringHash type) const
@@ -309,31 +296,6 @@ void Object::SendEvent(StringHash eventType)
 
 void Object::SendEvent(StringHash eventType, VariantMap& eventData)
 {
-#if URHO3D_PROFILING
-    bool eventProfilingEnabled = false;
-    if (Profiler* profiler = GetSubsystem<Profiler>())
-        eventProfilingEnabled = profiler->GetEventProfilingEnabled();
-
-    if (eventProfilingEnabled)
-        SendEventProfiled(eventType, eventData);
-    else
-#endif
-        SendEventNonProfiled(eventType, eventData);
-}
-
-void Object::SendEventProfiled(StringHash eventType, VariantMap& eventData)
-{
-#if URHO3D_PROFILING
-    String eventName;
-    if (!StringHash::GetSignificantString(eventType, eventName))
-        eventName = eventType.ToString();
-    URHO3D_PROFILE_SCOPED(eventName.CString(), PROFILER_COLOR_EVENTS);
-#endif
-    SendEventNonProfiled(eventType, eventData);
-}
-
-void Object::SendEventNonProfiled(StringHash eventType, VariantMap& eventData)
-{
     if (!Thread::IsMainThread())
     {
         URHO3D_LOGERROR("Sending events is only supported from the main thread");
@@ -347,8 +309,6 @@ void Object::SendEventNonProfiled(StringHash eventType, VariantMap& eventData)
     WeakPtr<Object> self(this);
     Context* context = context_;
     HashSet<Object*> processed;
-
-    context->GlobalBeginSendEvent(this, eventType, eventData);
 
     context->BeginSendEvent(this, eventType);
 
@@ -433,8 +393,6 @@ void Object::SendEventNonProfiled(StringHash eventType, VariantMap& eventData)
     }
 
     context->EndSendEvent();
-
-    context->GlobalEndSendEvent(this, eventType, eventData);
 }
 
 VariantMap& Object::GetEventDataMap() const
@@ -577,162 +535,5 @@ StringHashRegister& GetEventNameRegister()
     static StringHashRegister eventNameRegister(false /*non thread safe*/);
     return eventNameRegister;
 }
-
-Urho3D::StringHash EventNameRegistrar::RegisterEventName(const char* eventName)
-{
-    StringHash id(eventName);
-    GetEventNameMap()[id] = eventName;
-    return id;
-}
-
-const String& EventNameRegistrar::GetEventName(StringHash eventID)
-{
-    HashMap<StringHash, String>::ConstIterator it = GetEventNameMap().Find(eventID);
-    return  it != GetEventNameMap().End() ? it->second_ : String::EMPTY ;
-}
-
-HashMap<StringHash, String>& EventNameRegistrar::GetEventNameMap()
-{
-    static HashMap<StringHash, String> eventNames_;
-    return eventNames_;
-}
-
-// ATOMIC BEGIN
-
-void Object::UnsubscribeFromEventReceiver(Object* receiver)
-{
-    EventHandler* handler = eventHandlers_.First();
-    EventHandler* previous = 0;
-
-    while (handler)
-    {
-        if (handler->GetReceiver() == receiver)
-        {
-
-            if (handler->GetSender())
-                context_->RemoveEventReceiver(this, handler->GetSender(), handler->GetEventType());
-            else
-                context_->RemoveEventReceiver(this, handler->GetEventType());
-
-            EventHandler* next = eventHandlers_.Next(handler);
-            eventHandlers_.Erase(handler, previous);
-            handler = next;
-        }
-        else
-        {
-            previous = handler;
-            handler = eventHandlers_.Next(handler);
-        }
-    }
-
-}
-
-template <> Engine* Object::GetSubsystem<Engine>() const
-{
-    return context_->engine_;
-}
-
-template <> Time* Object::GetSubsystem<Time>() const
-{
-    return context_->time_;
-}
-
-template <> WorkQueue* Object::GetSubsystem<WorkQueue>() const
-{
-    return context_->workQueue_;
-}
-
-template <> Profiler* Object::GetSubsystem<Profiler>() const
-{
-    return context_->profiler_;
-}
-
-template <> FileSystem* Object::GetSubsystem<FileSystem>() const
-{
-    return context_->fileSystem_;
-}
-
-template <> Log* Object::GetSubsystem<Log>() const
-{
-    return context_->log_;
-}
-
-template <> ResourceCache* Object::GetSubsystem<ResourceCache>() const
-{
-    return context_->cache_;
-}
-
-template <> Localization* Object::GetSubsystem<Localization>() const
-{
-    return context_->l18n_;
-}
-
-template <> Network* Object::GetSubsystem<Network>() const
-{
-    return context_->network_;
-}
-
-template <> Web* Object::GetSubsystem<Web>() const
-{
-    return context_->web_;
-}
-
-template <> Database* Object::GetSubsystem<Database>() const
-{
-    return context_->db_;
-}
-
-template <> Input* Object::GetSubsystem<Input>() const
-{
-    return context_->input_;
-}
-
-template <> Audio* Object::GetSubsystem<Audio>() const
-{
-    return context_->audio_;
-}
-
-template <> UI* Object::GetSubsystem<UI>() const
-{
-    return context_->ui_;
-}
-
-template <> SystemUI* Object::GetSubsystem<SystemUI>() const
-{
-    return context_->systemUi_;
-}
-
-template <> Graphics* Object::GetSubsystem<Graphics>() const
-{
-    return context_->graphics_;
-}
-
-template <> Renderer* Object::GetSubsystem<Renderer>() const
-{
-    return context_->renderer_;
-}
-
-template <> Console* Object::GetSubsystem<Console>() const
-{
-    return context_->console_;
-}
-
-template <> DebugHud* Object::GetSubsystem<DebugHud>() const
-{
-    return context_->debugHud_;
-}
-
-template <> Metrics* Object::GetSubsystem<Metrics>() const
-{
-    return context_->metrics_;
-}
-
-void Object::SendEvent(StringHash eventType, const VariantMap& eventData)
-{
-    VariantMap eventDataCopy = eventData;
-    SendEvent(eventType, eventDataCopy);
-}
-
-// ATOMIC END
 
 }

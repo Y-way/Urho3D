@@ -32,10 +32,6 @@
 #include "../Urho2D/Sprite2D.h"
 #include "../Urho2D/TmxFile2D.h"
 #include "../Math/AreaAllocator.h"
-#include "../Resource/Image.h"
-// ATOMIC BEGIN
-#include "../Urho2D/Drawable2D.h"
-// ATOMIC END
 
 #include "../DebugNew.h"
 
@@ -153,9 +149,6 @@ bool TmxTileLayer2D::Load(const XMLElement& element, const TileMapInfo2D& info)
                     tile->gid_ = gid;
                     tile->sprite_ = tmxFile_->GetTileSprite(gid & ~FLIP_ALL);
                     tile->propertySet_ = tmxFile_->GetTilePropertySet(gid & ~FLIP_ALL);
-// ATOMIC BEGIN
-                    tile->objectGroup_ = tmxFile_->GetTileObjectGroup(gid);
-// ATOMIC END
                     tiles_[y * width_ + x] = tile;
                 }
 
@@ -236,14 +229,14 @@ TmxObjectGroup2D::TmxObjectGroup2D(TmxFile2D* tmxFile) :
 {
 }
 
-bool TmxObjectGroup2D::Load(const XMLElement& element, const TileMapInfo2D& info, bool local)
+bool TmxObjectGroup2D::Load(const XMLElement& element, const TileMapInfo2D& info)
 {
     LoadInfo(element);
 
     for (XMLElement objectElem = element.GetChild("object"); objectElem; objectElem = objectElem.GetNext("object"))
     {
         SharedPtr<TileMapObject2D> object(new TileMapObject2D());
-        StoreObject(objectElem, object, info, false, local);
+        StoreObject(objectElem, object, info);
         objects_.Push(object);
     }
 
@@ -253,14 +246,10 @@ bool TmxObjectGroup2D::Load(const XMLElement& element, const TileMapInfo2D& info
     return true;
 }
 
-void TmxObjectGroup2D::StoreObject(const XMLElement& objectElem, const SharedPtr<TileMapObject2D>& object, const TileMapInfo2D& info, bool isTile, bool local)
+void TmxObjectGroup2D::StoreObject(const XMLElement& objectElem, const SharedPtr<TileMapObject2D>& object, const TileMapInfo2D& info, bool isTile)
 {
         if (objectElem.HasAttribute("name"))
             object->name_ = objectElem.GetAttribute("name");
-// ATOMIC BEGIN
-        else
-            object->name_ = "Object";
-// ATOMIC END
         if (objectElem.HasAttribute("type"))
             object->type_ = objectElem.GetAttribute("type");
 
@@ -282,29 +271,8 @@ void TmxObjectGroup2D::StoreObject(const XMLElement& objectElem, const SharedPtr
         {
         case OT_RECTANGLE:
         case OT_ELLIPSE:
-            // ATOMIC BEGIN
-            if (!local)
-            {
-                object->position_ = info.ConvertPosition(Vector2(position.x_, position.y_ + size.y_));
-            }
-            else
-            {
-                Vector2 nposition = position;
-
-                nposition.x_ *= PIXEL_SIZE;
-                nposition.y_ *= PIXEL_SIZE;
-
-                nposition.x_ = nposition.x_ + object->size_.x_ / 2.0f;
-                nposition.y_ = nposition.y_ + object->size_.y_ / 2.0f;
-
-                nposition.y_ = info.tileHeight_  - nposition.y_;
-
-                object->position_ = nposition;
-            }
-            // ATOMIC END
-            // ATOMIC BEGIN
+            object->position_ = info.ConvertPosition(Vector2(position.x_, position.y_ + size.y_));
             object->size_ = Vector2(size.x_ * PIXEL_SIZE, size.y_ * PIXEL_SIZE);
-            // ATOMIC END
             break;
 
         case OT_TILE:
@@ -411,7 +379,11 @@ TmxFile2D::TmxFile2D(Context* context) :
 {
 }
 
-TmxFile2D::~TmxFile2D() = default;
+TmxFile2D::~TmxFile2D()
+{
+    for (unsigned i = 0; i < layers_.Size(); ++i)
+        delete layers_[i];
+}
 
 void TmxFile2D::RegisterObject(Context* context)
 {
@@ -454,18 +426,6 @@ bool TmxFile2D::BeginLoad(Deserializer& source)
 
                 tsxXMLFiles_[source] = tsxXMLFile;
 
-                // ATOMIC BEGIN
-
-                // Look for an image indicating that this is a spritesheet with multiple tiles instead
-                // of a series of individual images which are not supported
-                if (!tsxXMLFile->GetRoot("tileset").GetChild("image"))
-                {
-                    URHO3D_LOGERROR("Load TSX File failed: " + source + ". tsx files with individual images are not supported.");
-                    return false;
-                }
-                // ATOMIC END
-                tsxXMLFiles_[source] = tsxXMLFile;
-                
                 String textureFilePath =
                     GetParentPath(GetName()) + tsxXMLFile->GetRoot("tileset").GetChild("image").GetAttribute("source");
                 GetSubsystem<ResourceCache>()->BackgroundLoadResource<Texture2D>(textureFilePath, true, this);
@@ -495,7 +455,7 @@ bool TmxFile2D::EndLoad()
 
     XMLElement rootElem = loadXMLFile_->GetRoot("map");
     String version = rootElem.GetAttribute("version");
-    if (version != "1.0" && version != "1.0.0")
+    if (version != "1.0")
     {
         URHO3D_LOGERROR("Invalid version");
         return false;
@@ -531,17 +491,16 @@ bool TmxFile2D::EndLoad()
         String name = childElement.GetName();
         if (name == "tileset")
             ret = LoadTileSet(childElement);
-// ATOMIC BEGIN
         else if (name == "layer")
         {
-            SharedPtr<TmxTileLayer2D> tileLayer (new TmxTileLayer2D(this));
+            auto* tileLayer = new TmxTileLayer2D(this);
             ret = tileLayer->Load(childElement, info_);
 
             layers_.Push(tileLayer);
         }
         else if (name == "objectgroup")
         {
-            SharedPtr<TmxObjectGroup2D> objectGroup (new TmxObjectGroup2D(this));
+            auto* objectGroup = new TmxObjectGroup2D(this);
             ret = objectGroup->Load(childElement, info_);
 
             layers_.Push(objectGroup);
@@ -549,12 +508,11 @@ bool TmxFile2D::EndLoad()
         }
         else if (name == "imagelayer")
         {
-            SharedPtr<TmxImageLayer2D> imageLayer (new TmxImageLayer2D(this));
+            auto* imageLayer = new TmxImageLayer2D(this);
             ret = imageLayer->Load(childElement, info_);
 
             layers_.Push(imageLayer);
         }
-// ATOMIC END
 
         if (!ret)
         {
@@ -583,19 +541,15 @@ bool TmxFile2D::SetInfo(Orientation2D orientation, int width, int height, float 
 
 void TmxFile2D::AddLayer(unsigned index, TmxLayer2D *layer)
 {
-// ATOMIC BEGIN
     if (index > layers_.Size())
-        layers_.Push(SharedPtr<TmxLayer2D>(layer));
+        layers_.Push(layer);
     else // index <= layers_.size()
-        layers_.Insert(index, SharedPtr<TmxLayer2D>(layer));
-// ATOMIC END
+        layers_.Insert(index, layer);
 }
 
 void TmxFile2D::AddLayer(TmxLayer2D *layer)
 {
-// ATOMIC BEGIN
-    layers_.Push(SharedPtr<TmxLayer2D>(layer));
-// ATOMIC END
+    layers_.Push(layer);
 }
 
 Sprite2D* TmxFile2D::GetTileSprite(unsigned gid) const
@@ -678,16 +632,6 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
             if (!tsxXMLFile)
                 return false;
 
-            // ATOMIC BEGIN
-            // Look for an image indicating that this is a spritesheet with multiple tiles instead
-            // of a series of individual images which are not supported
-            if (!tsxXMLFile->GetRoot("tileset").GetChild("image"))
-            {
-                URHO3D_LOGERROR("Load TSX File failed: " + source + ". tsx files with individual images are not supported.");
-                return false;
-            }
-            // ATOMIC END
-
             // Add to mapping to avoid release
             tsxXMLFiles_[source] = tsxXMLFile;
 
@@ -720,13 +664,6 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
                 URHO3D_LOGERROR("Could not load texture " + textureFilePath);
                 return false;
             }
-
-            // ATOMIC BEGIN
-
-            // reduces border tile sample errors
-            texture->SetFilterMode(FILTER_NEAREST);
-
-            // ATOMIC END
 
             // Set hot spot at left bottom
             Vector2 hotSpot(0.0f, 0.0f);
@@ -790,7 +727,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
                 // Convert Tiled local position (left top) to Urho3D local position (left bottom)
                 objectElem.SetAttribute("y", String(info_.GetMapHeight() / PIXEL_SIZE - (tileHeight - objectElem.GetFloat("y"))));
 
-                objectGroup.StoreObject(objectElem, object, info_, true, false);
+                objectGroup.StoreObject(objectElem, object, info_, true);
                 objects.Push(object);
             }
             gidToCollisionShapeMapping_[gid] = objects;
@@ -801,41 +738,6 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
             propertySet->Load(tileElem.GetChild("properties"));
             gidToPropertySetMapping_[gid] = propertySet;
         }
-        
-        // ATOMIC BEGIN
-
-        // collision information
-        if (tileElem.HasChild("objectgroup"))
-        {
-            // ok, when you use multiple tile sets the "info"
-            // numbers can be different, this is a bit of a hack
-            // if something is wrong, look here... may have to need
-            // to refactor "info" to be per set
-
-            float _tileWidth = info_.tileWidth_;
-            float _tileHeight = info_.tileHeight_;
-
-            info_.tileHeight_ = (float) tileHeight * PIXEL_SIZE;
-            info_.tileWidth_ = (float) tileWidth * PIXEL_SIZE;
-
-            XMLElement groupElem = tileElem.GetChild("objectgroup");
-            TmxObjectGroup2D* objectGroup = new TmxObjectGroup2D(this);
-            if (!objectGroup->Load(groupElem, info_, true))
-            {
-                URHO3D_LOGERROR("Could not load objectgroup");
-                objectGroup->ReleaseRef();
-            }
-            else
-            {
-                gidToObjectGroupMapping_[gid] = objectGroup;
-            }
-
-            info_.tileWidth_ = _tileWidth;
-            info_.tileHeight_ = _tileHeight;
-        }
-
-        // ATOMIC END
-        
     }
 
     if (!isSingleTileSet)
@@ -886,17 +788,5 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
 
     return true;
 }
-
-// BEGIN ATOMIC
-
-TmxObjectGroup2D* TmxFile2D::GetTileObjectGroup(unsigned gid) const
-{
-    HashMap<int, SharedPtr<TmxObjectGroup2D> >::ConstIterator i = gidToObjectGroupMapping_.Find(gid);
-    if (i == gidToObjectGroupMapping_.End())
-        return nullptr;
-    return i->second_;
-}
-
-// END ATOMIC
 
 }

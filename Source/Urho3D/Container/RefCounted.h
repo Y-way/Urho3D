@@ -28,44 +28,8 @@
 #include <Urho3D/Urho3D.h>
 #endif
 
-#include "../Container/Str.h"
-#include "../Math/StringHash.h"
-
 namespace Urho3D
 {
-
-// ATOMIC BEGIN
-
-/// Instantation type, native code, JS, or C#
-enum InstantiationType
-{
-    INSTANTIATION_NATIVE = 0,
-    INSTANTIATION_JAVASCRIPT = 1,
-    INSTANTIATION_NET = 2
-};
-
-class RefCounted;
-
-// function that is called when ref count goes to 1 or 2+, used for script object lifetime
-typedef void (*RefCountChangedFunction)(RefCounted*, int refCount);
-
-// function callback for when a RefCounted is created
-typedef void(*RefCountedCreatedFunction)(RefCounted*);
-
-// function callback for when a RefCounted is deleted
-typedef void(*RefCountedDeletedFunction)(RefCounted*);
-
-typedef const void* ClassID;
-
-/// Macro to be included in RefCounted derived classes for efficient RTTI
-#define URHO3D_REFCOUNTED(typeName) \
-    public: \
-        virtual Urho3D::ClassID GetClassID() const { return GetClassIDStatic(); } \
-        static Urho3D::ClassID GetClassIDStatic() { static const int typeID = 0; return (Urho3D::ClassID) &typeID; } \
-        virtual const String& GetTypeName() const { return GetTypeNameStatic(); } \
-        static const String& GetTypeNameStatic() { static const String _typeName(#typeName); return _typeName; }
-
-// ATOMIC END
 
 /// Reference count structure.
 struct RefCount
@@ -117,54 +81,9 @@ public:
     /// Return pointer to the reference count structure.
     RefCount* RefCountPtr() { return refCount_; }
 
-// ATOMIC BEGIN
-
-    virtual bool IsObject() const { return false; }
-
-    virtual const String& GetTypeName() const = 0;
-
-    /// Increment reference count. Do not call any lifetime bookkeeping
-    void AddRefSilent();
-
-    /// Decrement reference count, do not call any lifetime bookkeeping, don't delete at refcount == 0
-    void ReleaseRefSilent();
-
-    virtual ClassID GetClassID() const  = 0;
-    static ClassID GetClassIDStatic() { static const int typeID = 0; return (ClassID) &typeID; }
-
-    /// JavaScript VM, heap object which can be pushed directly on stack without any lookups
-    inline void* JSGetHeapPtr() const { return jsHeapPtr_; }
-    inline void  JSSetHeapPtr(void* heapptr) { jsHeapPtr_ = heapptr; }
-
-    inline InstantiationType GetInstantiationType()  const { return instantiationType_; }
-    inline void SetInstantiationType(InstantiationType type) { instantiationType_ = type; }
-
-    static void AddRefCountChangedFunction(RefCountChangedFunction function);
-    static void RemoveRefCountChangedFunction(RefCountChangedFunction function);
-
-    static void AddRefCountedCreatedFunction(RefCountedCreatedFunction function);
-    static void RemoveRefCountedCreatedFunction(RefCountedCreatedFunction function);
-
-    static void AddRefCountedDeletedFunction(RefCountedDeletedFunction function);
-    static void RemoveRefCountedDeletedFunction(RefCountedDeletedFunction function);
-
-// ATOMIC END
-
 private:
     /// Pointer to the reference count structure.
     RefCount* refCount_;
-
-    // ATOMIC BEGIN
-
-    InstantiationType instantiationType_;
-    void* jsHeapPtr_;
-
-    static PODVector<RefCountChangedFunction> refCountChangedFunctions_;
-    static PODVector<RefCountedCreatedFunction> refCountedCreatedFunctions_;
-    static PODVector<RefCountedDeletedFunction> refCountedDeletedFunctions_;
-
-    // ATOMIC END
-
 };
 
 }

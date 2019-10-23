@@ -34,44 +34,9 @@ namespace Urho3D
 class IndexBuffer;
 class VertexBuffer;
 
-// ATOMIC BEGIN
 /// One billboard in the billboard set.
-class URHO3D_API Billboard : public RefCounted
+struct URHO3D_API Billboard
 {
-    friend class BillboardSet;
-    friend class ParticleEmitter;
-
-    URHO3D_REFCOUNTED(Billboard);
-
-public:
-    explicit Billboard();
-    ~Billboard() override;
-
-    const Vector3& GetPosition() const { return position_; }
-    void SetPosition(const Vector3 &position) { position_ = position; }
-
-    const Vector2 GetSize() const { return size_; }
-    void SetSize(const Vector2 &size) { size_ = size; }
-
-    const Rect& GetUV() const { return uv_; }
-    void SetUV(const Rect &uv) { uv_ = uv; }
-
-    const Color& GetColor() const { return color_; }
-    void SetColor(const Color &color) { color_ = color; }
-
-    float GetRotation() const { return rotation_; }
-    void SetRotation(float rotation) { rotation_ = rotation; }
-
-    const Vector3& GetDirection() const { return direction_; }
-    void SetDirection(const Vector3& direction) { direction_ = direction; }
-
-    bool IsEnabled() const { return enabled_; }
-    void SetEnabled(bool enabled) { enabled_ = enabled; }
-
-    float GetSortDistance() const { return sortDistance_; }
-    void SetSortDistance(float sortDistance) { sortDistance_ = sortDistance; }
-// ATOMIC END
-
     /// Position.
     Vector3 position_;
     /// Two-dimensional size. If BillboardSet has fixed screen size enabled, this is measured in pixels instead of world units.
@@ -91,10 +56,6 @@ public:
     /// Scale factor for fixed screen size mode. Used internally.
     float screenScaleFactor_;
 };
-
-// ATOMIC BEGIN
-static const unsigned MAX_BILLBOARDS = 65536 / 4;
-// ATOMIC END
 
 /// %Billboard component.
 class URHO3D_API BillboardSet : public Drawable
@@ -145,10 +106,8 @@ public:
     /// Return number of billboards.
     unsigned GetNumBillboards() const { return billboards_.Size(); }
 
-    // ATOMIC BEGIN
     /// Return all billboards.
-    Vector<SharedPtr<Billboard>>& GetBillboards() { return billboards_; }
-    // ATOMIC END
+    PODVector<Billboard>& GetBillboards() { return billboards_; }
 
     /// Return billboard by index.
     Billboard* GetBillboard(unsigned index);
@@ -194,9 +153,7 @@ protected:
     void MarkPositionsDirty();
 
     /// Billboards.
-    // ATOMIC BEGIN
-    Vector<SharedPtr<Billboard>> billboards_;
-    // ATOMIC END
+    PODVector<Billboard> billboards_;
     /// Animation LOD bias.
     float animationLodBias_;
     /// Animation LOD timer.

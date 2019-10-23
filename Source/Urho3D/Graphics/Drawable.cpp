@@ -36,10 +36,6 @@
 #include "../IO/Log.h"
 #include "../Scene/Scene.h"
 
-// ATOMIC BEGIN
-#include "../IO/Log.h"
-// ATOMIC END
-
 #include "../DebugNew.h"
 
 #ifdef _MSC_VER

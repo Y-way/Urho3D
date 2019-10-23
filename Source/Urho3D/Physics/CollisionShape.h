@@ -66,7 +66,6 @@ enum ShapeType
 /// Base class for collision shape geometry data.
 struct CollisionGeometryData : public RefCounted
 {
-    URHO3D_REFCOUNTED(CollisionGeometryData)
 };
 
 /// Cache of collision geometry data.

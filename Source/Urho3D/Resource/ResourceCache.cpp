@@ -45,11 +45,6 @@
 namespace Urho3D
 {
 
-// ATOMIC BEGIN
-const char* PAK_EXTENSION = ".pak";
-// ATOMIC END
-
-
 static const char* checkDirs[] =
 {
     "Fonts",
@@ -381,34 +376,10 @@ bool ResourceCache::ReloadResource(Resource* resource)
 
     resource->SendEvent(E_RELOADSTARTED);
 
-// ATOMIC BEGIN
-
     bool success = false;
-    SharedPtr<File> file = GetFile(resource->GetName(), true, resource->GetType());
-
+    SharedPtr<File> file = GetFile(resource->GetName());
     if (file)
-    {
-#ifdef URHO3D_PLATFORM_DESKTOP
-        String ext = GetExtension(resource->GetName());
-        if (ext == ".jpg" || ext == ".png" || ext == ".tga")
-        {
-            String ddsName = "DDS/" + resource->GetName() + ".dds";
-            SharedPtr<File> ddsFile = GetFile(ddsName, false);
-            if (ddsFile != NULL)
-                success = resource->Load(*(ddsFile.Get()));
-            else
-                success = resource->Load(*(file.Get()));
-        }
-        else
-        {
-            success = resource->Load(*(file.Get()));
-        }
-#else
         success = resource->Load(*(file.Get()));
-#endif
-    }
-
-// ATOMIC END
 
     if (success)
     {
@@ -513,8 +484,8 @@ void ResourceCache::RemoveResourceRouter(ResourceRouter* router)
         }
     }
 }
-// ATOMIC BEGIN
-SharedPtr<File> ResourceCache::GetFile(const String& name, bool sendEventOnFailure, StringHash type)
+
+SharedPtr<File> ResourceCache::GetFile(const String& name, bool sendEventOnFailure)
 {
     MutexLock lock(resourceMutex_);
 
@@ -523,7 +494,7 @@ SharedPtr<File> ResourceCache::GetFile(const String& name, bool sendEventOnFailu
     {
         isRouting_ = true;
         for (unsigned i = 0; i < resourceRouters_.Size(); ++i)
-            resourceRouters_[i]->Route(sanitatedName, type, RESOURCE_GETFILE);
+            resourceRouters_[i]->Route(sanitatedName, RESOURCE_GETFILE);
         isRouting_ = false;
     }
 
@@ -567,7 +538,6 @@ SharedPtr<File> ResourceCache::GetFile(const String& name, bool sendEventOnFailu
 
     return SharedPtr<File>();
 }
-// ATOMIC END
 
 Resource* ResourceCache::GetExistingResource(StringHash type, const String& name)
 {
@@ -633,13 +603,10 @@ Resource* ResourceCache::GetResource(StringHash type, const String& name, bool s
         return nullptr;
     }
 
-    // ATOMIC BEGIN
     // Attempt to load the resource
-    // SharedPtr<File> file = GetFile(sanitatedName, sendEventOnFailure);
-    SharedPtr<File> file = GetFile(sanitatedName, sendEventOnFailure, type);
+    SharedPtr<File> file = GetFile(sanitatedName, sendEventOnFailure);
     if (!file)
         return nullptr;   // Error is already logged
-    // ATOMIC END
 
     URHO3D_LOGDEBUG("Loading resource " + sanitatedName);
     resource->SetName(sanitatedName);
@@ -715,31 +682,8 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const String
         return SharedPtr<Resource>();
     }
 
-// ATOMIC BEGIN
-
     // Attempt to load the resource
-    SharedPtr<File> file;
-
-    // #623 BEGIN TODO: For now try to get DDS version of textures from /DDS cache sub directory,
-    // ultimately should have per platform compressed versions saved in cache
-#ifdef URHO3D_PLATFORM_DESKTOP
-    String ext = Urho3D::GetExtension(sanitatedName);
-    if (ext == ".jpg" || ext == ".png" || ext == ".tga")
-    {
-        String ddsName = "DDS/" + sanitatedName + ".dds";
-        file = GetFile(ddsName, false);
-        if (file)
-            URHO3D_LOGDEBUG("Loaded cached DDS " + sanitatedName + ".dds");
-    }
-    if (!file)
-        file = GetFile(sanitatedName, sendEventOnFailure);
-#else
-    // #623 END TODO
-    file = GetFile(sanitatedName, sendEventOnFailure);
-#endif
-
-// ATOMIC END
-
+    SharedPtr<File> file = GetFile(sanitatedName, sendEventOnFailure);
     if (!file)
         return SharedPtr<Resource>();  // Error is already logged
 
@@ -794,7 +738,7 @@ bool ResourceCache::Exists(const String& name) const
     {
         isRouting_ = true;
         for (unsigned i = 0; i < resourceRouters_.Size(); ++i)
-            resourceRouters_[i]->Route(sanitatedName, StringHash::ZERO, RESOURCE_CHECKEXISTS);
+            resourceRouters_[i]->Route(sanitatedName, RESOURCE_CHECKEXISTS);
         isRouting_ = false;
     }
 
@@ -840,7 +784,6 @@ unsigned long long ResourceCache::GetTotalMemoryUse() const
 
 String ResourceCache::GetResourceFileName(const String& name) const
 {
-    // MutexLock lock(resourceMutex_);
     auto* fileSystem = GetSubsystem<FileSystem>();
     for (unsigned i = 0; i < resourceDirs_.Size(); ++i)
     {
@@ -1195,81 +1138,5 @@ void RegisterResourceLibrary(Context* context)
     PListFile::RegisterObject(context);
     XMLFile::RegisterObject(context);
 }
-
-// ATOMIC BEGIN
-ResourceNameIterator::ResourceNameIterator()
-{
-    Reset();
-}
-
-const String& ResourceNameIterator::GetCurrent()
-{
-    return (index_ < filenames_.Size()) ?
-        filenames_[index_] :
-        String::EMPTY;
-}
-
-bool ResourceNameIterator::MoveNext()
-{
-    return ++index_ < filenames_.Size();
-}
-
-void ResourceNameIterator::Reset()
-{
-    index_ = -1;
-}
-
-void ResourceCache::Scan(Vector<String>& result, const String& pathName, const String& filter, unsigned flags, bool recursive) const
-{
-    Vector<String> interimResult;
-
-    for (unsigned i = 0; i < packages_.Size(); ++i)
-    {
-        packages_[i]->Scan(interimResult, pathName, filter, recursive);
-        result.Insert(result.End(), interimResult);
-    }
-
-    auto* fileSystem = GetSubsystem<FileSystem>();
-    for (unsigned i = 0; i < resourceDirs_.Size(); ++i)
-    {
-        fileSystem->ScanDir(interimResult, resourceDirs_[i] + pathName, filter, flags, recursive);
-        result.Insert(result.End(), interimResult);
-    }
-}
-
-SharedPtr<ResourceNameIterator> ResourceCache::Scan(const String& pathName, const String& filter, unsigned flags, bool recursive) const
-{
-    SharedPtr<ResourceNameIterator> enumerator(new ResourceNameIterator());
-    Scan(enumerator->filenames_, pathName, filter, flags, recursive);
-
-    return enumerator;
-}
-
-String ResourceCache::PrintResources(const String& typeName) const
-{
-
-    StringHash typeNameHash(typeName);
-
-    String output = "Resource Type         Refs   WeakRefs  Name\n\n";
-
-    for (HashMap<StringHash, ResourceGroup>::ConstIterator cit = resourceGroups_.Begin(); cit != resourceGroups_.End(); ++cit)
-    {
-        for (HashMap<StringHash, SharedPtr<Resource> >::ConstIterator resIt = cit->second_.resources_.Begin(); resIt != cit->second_.resources_.End(); ++resIt)
-        {
-            Resource* resource = resIt->second_;
-
-            // filter
-            if (typeName.Length() && resource->GetType() != typeNameHash)
-                continue;
-
-            output.AppendWithFormat("%s     %i     %i     %s\n",resource->GetTypeName().CString(), resource->Refs(), resource->WeakRefs(), resource->GetName().CString());
-        }
-
-    }
-
-    return output;
-}
-
-// ATOMIC END
 
 }
