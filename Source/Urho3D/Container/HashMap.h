@@ -515,10 +515,7 @@ public:
             return false;
 
         // Check for being power of two
-        unsigned check = numBuckets;
-        while (!(check & 1u))
-            check >>= 1;
-        if (check != 1)
+        if (!Urho3D::IsPowerOfTwo(numBuckets))
             return false;
 
         AllocateBuckets(Size(), numBuckets);
@@ -617,6 +614,20 @@ public:
 
     /// Return last pair.
     const KeyValue& Back() const { return *(--End()); }
+
+    /// Insert a pair only if a corresponding key does not already exist.
+    Iterator InsertNew(const T& key, const U& value)
+    {
+        unsigned hashKey = Hash(key);
+        if (ptrs_)
+        {
+            Node* node = FindNode(key, hashKey);
+            if (node)
+                return Iterator(node);
+        }
+
+        return Iterator(InsertNode(key, value, false));
+    }
 
 private:
     /// Return the head node.

@@ -255,6 +255,32 @@ Graphics::Graphics(Context* context) :
     Object(context),
     impl_(new GraphicsImpl()),
     position_(SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED),
+    multiSample_(1),
+    fullscreen_(false),
+    borderless_(false),
+    resizable_(false),
+    highDPI_(false),
+    vsync_(false),
+    monitor_(0),
+    refreshRate_(0),
+    tripleBuffer_(false),
+    flushGPU_(false),
+    sRGB_(false),
+    anisotropySupport_(false),
+    dxtTextureSupport_(false),
+    etcTextureSupport_(false),
+    pvrtcTextureSupport_(false),
+    hardwareShadowSupport_(false),
+    lightPrepassSupport_(false),
+    deferredSupport_(false),
+    instancingSupport_(false),
+    sRGBSupport_(false),
+    sRGBWriteSupport_(false),
+    numPrimitives_(0),
+    numBatches_(0),
+    maxScratchBufferRequest_(0),
+    defaultTextureFilterMode_(FILTER_TRILINEAR),
+    defaultTextureAnisotropy_(4),
     shaderPath_("Shaders/HLSL/"),
     shaderExtension_(".hlsl"),
     orientations_("LandscapeLeft LandscapeRight"),
@@ -732,6 +758,10 @@ bool Graphics::BeginFrame()
     numPrimitives_ = 0;
     numBatches_ = 0;
 
+    // ATOMIC BEGIN
+    numSinglePassPrimitives_ = 0;
+    // ATOMIC END
+
     SendEvent(E_BEGINRENDERING);
 
     return true;
@@ -927,6 +957,11 @@ void Graphics::Draw(PrimitiveType type, unsigned vertexStart, unsigned vertexCou
 
     numPrimitives_ += primitiveCount;
     ++numBatches_;
+
+    // ATOMIC BEGIN
+    if (GetNumPasses() == 1)
+        numSinglePassPrimitives_ += primitiveCount;
+    // ATOMIC END
 }
 
 void Graphics::Draw(PrimitiveType type, unsigned indexStart, unsigned indexCount, unsigned minVertex, unsigned vertexCount)
@@ -944,6 +979,12 @@ void Graphics::Draw(PrimitiveType type, unsigned indexStart, unsigned indexCount
 
     numPrimitives_ += primitiveCount;
     ++numBatches_;
+
+    // ATOMIC BEGIN
+    if (GetNumPasses() == 1)
+        numSinglePassPrimitives_ += primitiveCount;
+    // ATOMIC END
+
 }
 
 void Graphics::Draw(PrimitiveType type, unsigned indexStart, unsigned indexCount, unsigned baseVertexIndex, unsigned minVertex, unsigned vertexCount)
@@ -961,6 +1002,12 @@ void Graphics::Draw(PrimitiveType type, unsigned indexStart, unsigned indexCount
 
     numPrimitives_ += primitiveCount;
     ++numBatches_;
+
+    // ATOMIC BEGIN
+    if (GetNumPasses() == 1)
+        numSinglePassPrimitives_ += primitiveCount;
+    // ATOMIC END
+
 }
 
 void Graphics::DrawInstanced(PrimitiveType type, unsigned indexStart, unsigned indexCount, unsigned minVertex, unsigned vertexCount,
@@ -991,6 +1038,12 @@ void Graphics::DrawInstanced(PrimitiveType type, unsigned indexStart, unsigned i
 
     numPrimitives_ += instanceCount * primitiveCount;
     ++numBatches_;
+
+    // ATOMIC BEGIN
+    if (GetNumPasses() == 1)
+        numSinglePassPrimitives_ += instanceCount * primitiveCount;
+    // ATOMIC END
+
 }
 
 void Graphics::DrawInstanced(PrimitiveType type, unsigned indexStart, unsigned indexCount, unsigned baseVertexIndex, unsigned minVertex,
@@ -1021,6 +1074,12 @@ void Graphics::DrawInstanced(PrimitiveType type, unsigned indexStart, unsigned i
 
     numPrimitives_ += instanceCount * primitiveCount;
     ++numBatches_;
+
+    // ATOMIC BEGIN
+    if (GetNumPasses() == 1)
+        numSinglePassPrimitives_ += instanceCount * primitiveCount;
+    // ATOMIC END
+
 }
 
 void Graphics::SetVertexBuffer(VertexBuffer* buffer)
@@ -1526,19 +1585,19 @@ void Graphics::SetDefaultTextureAnisotropy(unsigned level)
 void Graphics::ResetRenderTargets()
 {
     for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
-        SetRenderTarget(i, (RenderSurface*)nullptr);
-    SetDepthStencil((RenderSurface*)nullptr);
+        SetRenderTarget(i, nullptr);
+    SetDepthStencil(nullptr);
     SetViewport(IntRect(0, 0, width_, height_));
 }
 
 void Graphics::ResetRenderTarget(unsigned index)
 {
-    SetRenderTarget(index, (RenderSurface*)nullptr);
+    SetRenderTarget(index, nullptr);
 }
 
 void Graphics::ResetDepthStencil()
 {
-    SetDepthStencil((RenderSurface*)nullptr);
+    SetDepthStencil(nullptr);
 }
 
 void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
@@ -2660,5 +2719,58 @@ void Graphics::SetTextureUnitMappings()
     textureUnits_["ZoneCubeMap"] = TU_ZONE;
     textureUnits_["ZoneVolumeMap"] = TU_ZONE;
 }
+
+// ATOMIC BEGIN
+
+// To satisfy script binding linking
+void Graphics::SetTextureForUpdate(Texture* texture)
+{
+
+}
+
+void Graphics::SetTextureParametersDirty()
+{
+
+}
+
+/// Return shader program. This is an API-specific class and should not be used by applications.
+ShaderProgram* Graphics::GetShaderProgram() const
+{
+    return 0;
+}
+
+/// Restore GPU objects and reinitialize state. Requires an open window. Used only on OpenGL.
+void Graphics::Restore()
+{
+
+}
+
+void Graphics::CleanupRenderSurface(RenderSurface* surface)
+{
+
+}
+
+ConstantBuffer* Graphics::GetOrCreateConstantBuffer(ShaderType type, unsigned index, unsigned size)
+{
+    return 0;
+}
+
+void Graphics::MarkFBODirty()
+{
+
+}
+
+void Graphics::SetVBO(unsigned object)
+{
+
+}
+
+void Graphics::SetUBO(unsigned object)
+{
+
+}
+
+
+// ATOMIC END
 
 }

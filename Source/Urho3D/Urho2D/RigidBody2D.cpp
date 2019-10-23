@@ -50,7 +50,10 @@ static const char* bodyTypeNames[] =
 RigidBody2D::RigidBody2D(Context* context) :
     Component(context),
     useFixtureMass_(true),
-    body_(nullptr)
+    body_(nullptr),
+// ATOMIC BEGIN
+    castShadows_(true)
+// ATOMIC END
 {
     // Make sure the massData members are zero-initialized.
     massData_.mass = 0.0f;
@@ -87,6 +90,10 @@ void RigidBody2D::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Awake", IsAwake, SetAwake, bool, true, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Linear Velocity", GetLinearVelocity, SetLinearVelocity, Vector2, Vector2::ZERO, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Angular Velocity", GetAngularVelocity, SetAngularVelocity, float, 0.0f, AM_DEFAULT);
+
+    // ATOMIC BEGIN
+    URHO3D_ACCESSOR_ATTRIBUTE("Cast Shadows", GetCastShadows, SetCastShadows, bool, true, AM_DEFAULT);
+    // ATOMIC END
 }
 
 

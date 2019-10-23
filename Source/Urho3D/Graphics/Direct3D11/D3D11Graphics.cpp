@@ -632,13 +632,13 @@ void Graphics::Clear(ClearTargetFlags flags, const Color& color, float depth, un
         model.m23_ = Clamp(depth, 0.0f, 1.0f);
 
         SetBlendMode(BLEND_REPLACE);
-        SetColorWrite(flags & CLEAR_COLOR);
+        SetColorWrite((flags & CLEAR_COLOR) != 0);
         SetCullMode(CULL_NONE);
         SetDepthTest(CMP_ALWAYS);
-        SetDepthWrite(flags & CLEAR_DEPTH);
+        SetDepthWrite((flags & CLEAR_DEPTH) != 0);
         SetFillMode(FILL_SOLID);
         SetScissorTest(false);
-        SetStencilTest(flags & CLEAR_STENCIL, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, stencil);
+        SetStencilTest((flags & CLEAR_STENCIL) != 0, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, stencil);
         SetShaders(GetShader(VS, "ClearFramebuffer"), GetShader(PS, "ClearFramebuffer"));
         SetShaderParameter(VSP_MODEL, model);
         SetShaderParameter(VSP_VIEWPROJ, projection);
@@ -1351,19 +1351,19 @@ void Graphics::SetTextureParametersDirty()
 void Graphics::ResetRenderTargets()
 {
     for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
-        SetRenderTarget(i, (RenderSurface*)nullptr);
-    SetDepthStencil((RenderSurface*)nullptr);
+        SetRenderTarget(i, nullptr);
+    SetDepthStencil(nullptr);
     SetViewport(IntRect(0, 0, width_, height_));
 }
 
 void Graphics::ResetRenderTarget(unsigned index)
 {
-    SetRenderTarget(index, (RenderSurface*)nullptr);
+    SetRenderTarget(index, nullptr);
 }
 
 void Graphics::ResetDepthStencil()
 {
-    SetDepthStencil((RenderSurface*)nullptr);
+    SetDepthStencil(nullptr);
 }
 
 void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
@@ -2336,7 +2336,7 @@ void Graphics::ResetCachedState()
 
     indexBuffer_ = nullptr;
     vertexDeclarationHash_ = 0;
-    primitiveType_ = 0;
+    primitiveType_ = nullptr;
     vertexShader_ = nullptr;
     pixelShader_ = nullptr;
     blendMode_ = BLEND_REPLACE;
@@ -2656,5 +2656,32 @@ void Graphics::SetTextureUnitMappings()
     textureUnits_["ZoneCubeMap"] = TU_ZONE;
     textureUnits_["ZoneVolumeMap"] = TU_ZONE;
 }
+
+// ATOMIC BEGIN
+
+// To satisfy script binding linking
+void Graphics::SetTextureForUpdate(Texture* texture)
+{
+
+}
+
+void Graphics::MarkFBODirty()
+{
+
+}
+
+void Graphics::SetVBO(unsigned object)
+{
+
+}
+
+void Graphics::SetUBO(unsigned object)
+{
+
+}
+
+
+// ATOMIC END
+
 
 }

@@ -74,9 +74,9 @@ void Animatable::RegisterObject(Context* context)
         ResourceRef(ObjectAnimation::GetTypeStatic()), AM_DEFAULT);
 }
 
-bool Animatable::LoadXML(const XMLElement& source)
+bool Animatable::LoadXML(const XMLElement& source, bool setInstanceDefault)
 {
-    if (!Serializable::LoadXML(source))
+    if (!Serializable::LoadXML(source, setInstanceDefault))
         return false;
 
     SetObjectAnimation(nullptr);
@@ -120,9 +120,9 @@ bool Animatable::LoadXML(const XMLElement& source)
     return true;
 }
 
-bool Animatable::LoadJSON(const JSONValue& source)
+bool Animatable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 {
-    if (!Serializable::LoadJSON(source))
+    if (!Serializable::LoadJSON(source, setInstanceDefault))
         return false;
 
     SetObjectAnimation(nullptr);

@@ -571,6 +571,26 @@ public:
     /// Return whether is using an OpenGL 3 context. Return always false on Direct3D9 & Direct3D11.
     static bool GetGL3Support();
 
+    // ATOMIC BEGIN
+
+    /// Get the SDL_Window as a void* to avoid having to include the graphics implementation
+    void* GetSDLWindow() { return window_; }
+    
+    int GetNumMonitors();
+
+    IntVector2 GetMonitorResolution(int monitorId) const;
+    /// Return number of passes drawn this frame
+    static unsigned GetNumPasses() { return numPasses_; }
+    /// Set number of passes drawn this frame
+    static void SetNumPasses(unsigned value) { numPasses_ = value; }
+
+    /// Return number of single render pass primitives drawn this frame (D3D9 Only)
+    static unsigned GetSinglePassPrimitives() { return numSinglePassPrimitives_; }
+    /// Set number of single render pass primitives drawn this frame (D3D9 Only)
+    static void SetSinglePassPrimitives(unsigned value) { numSinglePassPrimitives_ = value; }
+  
+    // ATOMIC END
+
 private:
     /// Create the application window.
     bool OpenWindow(int width, int height, bool resizable, bool borderless);
@@ -798,6 +818,11 @@ private:
     static const Vector2 pixelUVOffset;
     /// OpenGL3 support flag.
     static bool gl3Support;
+
+// ATOMIC BEGIN
+    static unsigned numPasses_;
+    static unsigned numSinglePassPrimitives_;
+// ATOMIC END
 };
 
 /// Register Graphics library objects.

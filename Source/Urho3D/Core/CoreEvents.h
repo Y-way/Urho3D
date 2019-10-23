@@ -63,4 +63,12 @@ URHO3D_EVENT(E_ENDFRAME, EndFrame)
 {
 }
 
+// ATOMIC BEGIN
+/// Updating paused or resumed event.
+URHO3D_EVENT(E_UPDATESPAUSEDRESUMED, UpdatesPaused)
+{
+    URHO3D_PARAM(P_PAUSED, Paused);            // bool
+}
+// ATOMIC END
+
 }

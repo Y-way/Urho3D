@@ -59,16 +59,16 @@ public:
     virtual const Vector<AttributeInfo>* GetAttributes() const;
     /// Return network replication attribute descriptions, or null if none defined.
     virtual const Vector<AttributeInfo>* GetNetworkAttributes() const;
-    /// Load from binary data. Return true if successful.
-    virtual bool Load(Deserializer& source);
+    /// Load from binary data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
+    virtual bool Load(Deserializer& source, bool setInstanceDefault = false);
     /// Save as binary data. Return true if successful.
     virtual bool Save(Serializer& dest) const;
-    /// Load from XML data. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source);
+    /// Load from XML data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
+    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false);
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const;
-    /// Load from JSON data. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source);
+    /// Load from JSON data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
+    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false);
     /// Save as JSON data. Return true if successful.
     virtual bool SaveJSON(JSONValue& dest) const;
 
@@ -149,12 +149,28 @@ private:
 };
 
 /// Template implementation of the variant attribute accessor.
-template <class TClassType, class TGetFunction, class TSetFunction>
+template <typename TClassType, typename TGetFunction, typename TSetFunction>
 class VariantAttributeAccessorImpl : public AttributeAccessor
 {
 public:
     /// Construct.
-    VariantAttributeAccessorImpl(TGetFunction getFunction, TSetFunction setFunction) : getFunction_(getFunction), setFunction_(setFunction) { }
+    VariantAttributeAccessorImpl(TGetFunction getFunction, TSetFunction setFunction)
+        : getFunction_(getFunction),
+        setFunction_(setFunction)
+    {
+
+    }
+    // typedef U (T::*GetFunctionPtr)() const;
+    // typedef void (T::*SetFunctionPtr)(U);
+
+    // /// Construct with function pointers.
+    // EnumAttributeAccessorImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
+    //     getFunction_(getFunction),
+    //     setFunction_(setFunction)
+    // {
+    //     assert(getFunction_);
+    //     assert(setFunction_);
+    // }
 
     /// Invoke getter function.
     void Get(const Serializable* ptr, Variant& value) const override
@@ -183,7 +199,7 @@ private:
 /// \tparam TClassType Serializable class type.
 /// \tparam TGetFunction Functional object with call signature `void getFunction(const TClassType& self, Variant& value)`
 /// \tparam TSetFunction Functional object with call signature `void setFunction(TClassType& self, const Variant& value)`
-template <class TClassType, class TGetFunction, class TSetFunction>
+template <typename TClassType, typename TGetFunction, typename TSetFunction>
 SharedPtr<AttributeAccessor> MakeVariantAttributeAccessor(TGetFunction getFunction, TSetFunction setFunction)
 {
     return SharedPtr<AttributeAccessor>(new VariantAttributeAccessorImpl<TClassType, TGetFunction, TSetFunction>(getFunction, setFunction));
@@ -265,5 +281,193 @@ namespace AttributeMetadata
 
 /// Deprecated. Use URHO3D_ACCESSOR_ATTRIBUTE instead.
 #define URHO3D_MIXED_ACCESSOR_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, mode) URHO3D_ACCESSOR_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, mode)
+
+// /// Template implementation of the enum attribute accessor that uses free functions invoke helper class.
+// template <typename T, typename U> class EnumAttributeAccessorFreeImpl : public AttributeAccessor
+// {
+// public:
+//     typedef U(*GetFunctionPtr)(const T*);
+//     typedef void(*SetFunctionPtr)(T*, U);
+
+//     /// Construct with function pointers.
+//     EnumAttributeAccessorFreeImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
+//         getFunction_(getFunction),
+//         setFunction_(setFunction)
+//     {
+//         assert(getFunction_);
+//         assert(setFunction_);
+//     }
+
+//     /// Invoke getter function.
+//     virtual void Get(const Serializable* ptr, Variant& dest) const
+//     {
+//         assert(ptr);
+//         const T* classPtr = static_cast<const T*>(ptr);
+//         dest = (*getFunction_)(classPtr);
+//     }
+
+//     /// Invoke setter function.
+//     virtual void Set(Serializable* ptr, const Variant& value)
+//     {
+//         assert(ptr);
+//         T* classPtr = static_cast<T*>(ptr);
+//         (*setFunction_)(classPtr, (U)value.GetInt());
+//     }
+
+//     /// Class-specific pointer to getter function.
+//     GetFunctionPtr getFunction_;
+//     /// Class-specific pointer to setter function.
+//     SetFunctionPtr setFunction_;
+// };
+
+// /// Attribute trait (default use const reference for object type).
+// template <typename T> struct AttributeTrait
+// {
+//     /// Get function return type.
+//     typedef const T& ReturnType;
+//     /// Set function parameter type.
+//     typedef const T& ParameterType;
+// };
+
+// /// Int attribute trait.
+// template <> struct AttributeTrait<int>
+// {
+//     typedef int ReturnType;
+//     typedef int ParameterType;
+// };
+
+// /// unsigned attribute trait.
+// template <> struct AttributeTrait<unsigned>
+// {
+//     typedef unsigned ReturnType;
+//     typedef unsigned ParameterType;
+// };
+
+// /// Bool attribute trait.
+// template <> struct AttributeTrait<bool>
+// {
+//     typedef bool ReturnType;
+//     typedef bool ParameterType;
+// };
+
+// /// Float attribute trait.
+// template <> struct AttributeTrait<float>
+// {
+//     typedef float ReturnType;
+//     typedef float ParameterType;
+// };
+
+// /// Mixed attribute trait (use const reference for set function only).
+// template <typename T> struct MixedAttributeTrait
+// {
+//     typedef T ReturnType;
+//     typedef const T& ParameterType;
+// };
+
+// /// Template implementation of the attribute accessor invoke helper class.
+// template <typename T, typename U, typename Trait> class AttributeAccessorImpl : public AttributeAccessor
+// {
+// public:
+//     typedef typename Trait::ReturnType (T::*GetFunctionPtr)() const;
+//     typedef void (T::*SetFunctionPtr)(typename Trait::ParameterType);
+
+//     /// Construct with function pointers.
+//     AttributeAccessorImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
+//         getFunction_(getFunction),
+//         setFunction_(setFunction)
+//     {
+//         assert(getFunction_);
+//         assert(setFunction_);
+//     }
+
+//     /// Invoke getter function.
+//     virtual void Get(const Serializable* ptr, Variant& dest) const
+//     {
+//         assert(ptr);
+//         const T* classPtr = static_cast<const T*>(ptr);
+//         dest = (classPtr->*getFunction_)();
+//     }
+
+//     /// Invoke setter function.
+//     virtual void Set(Serializable* ptr, const Variant& value)
+//     {
+//         assert(ptr);
+//         T* classPtr = static_cast<T*>(ptr);
+//         (classPtr->*setFunction_)(value.Get<U>());
+//     }
+
+//     /// Class-specific pointer to getter function.
+//     GetFunctionPtr getFunction_;
+//     /// Class-specific pointer to setter function.
+//     SetFunctionPtr setFunction_;
+// };
+
+// /// Template implementation of the attribute accessor that uses free functions invoke helper class.
+// template <typename T, typename U, typename Trait> class AttributeAccessorFreeImpl : public AttributeAccessor
+// {
+// public:
+//     typedef typename Trait::ReturnType(*GetFunctionPtr)(const T*);
+//     typedef void(*SetFunctionPtr)(T*, typename Trait::ParameterType);
+
+//     /// Construct with function pointers.
+//     AttributeAccessorFreeImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
+//         getFunction_(getFunction),
+//         setFunction_(setFunction)
+//     {
+//         assert(getFunction_);
+//         assert(setFunction_);
+//     }
+
+//     /// Invoke getter function.
+//     virtual void Get(const Serializable* ptr, Variant& dest) const
+//     {
+//         assert(ptr);
+//         const T* classPtr = static_cast<const T*>(ptr);
+//         dest = (*getFunction_)(classPtr);
+//     }
+
+//     /// Invoke setter function.
+//     virtual void Set(Serializable* ptr, const Variant& value)
+//     {
+//         assert(ptr);
+//         T* classPtr = static_cast<T*>(ptr);
+//         (*setFunction_)(classPtr, value.Get<U>());
+//     }
+
+//     /// Class-specific pointer to getter function.
+//     GetFunctionPtr getFunction_;
+//     /// Class-specific pointer to setter function.
+//     SetFunctionPtr setFunction_;
+// };
+
+// // The following macros need to be used within a class member function such as ClassName::RegisterObject().
+// // A variable called "context" needs to exist in the current scope and point to a valid Context object.
+
+// /// Copy attributes from a base class.
+// #define URHO3D_COPY_BASE_ATTRIBUTES(sourceClassName) context->CopyBaseAttributes<sourceClassName, ClassName>()
+// /// Remove attribute by name.
+// #define URHO3D_REMOVE_ATTRIBUTE(name) context->RemoveAttribute<ClassName>(name)
+// /// Define an attribute that points to a memory offset in the object.
+// #define URHO3D_ATTRIBUTE(name, typeName, variable, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, offsetof(ClassName, variable), defaultValue, mode))
+// /// Define an attribute that points to a memory offset in the object, and uses zero-based enum values, which are mapped to names through an array of C string pointers.
+// #define URHO3D_ENUM_ATTRIBUTE(name, variable, enumNames, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(name, offsetof(ClassName, variable), enumNames, defaultValue, mode))
+// /// Define an attribute that uses get and set functions.
+// #define URHO3D_ACCESSOR_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, Urho3D::AttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, mode))
+// /// Define an attribute that uses get and set free functions.
+// #define URHO3D_ACCESSOR_ATTRIBUTE_FREE(name, getFunction, setFunction, typeName, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorFreeImpl<ClassName, typeName, Urho3D::AttributeTrait<typeName > >(getFunction, setFunction), defaultValue, mode))
+// /// Define an attribute that uses get and set functions, and uses zero-based enum values, which are mapped to names through an array of C string pointers.
+// #define URHO3D_ENUM_ACCESSOR_ATTRIBUTE(name, getFunction, setFunction, typeName, enumNames, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(name, new Urho3D::EnumAttributeAccessorImpl<ClassName, typeName >(&ClassName::getFunction, &ClassName::setFunction), enumNames, defaultValue, mode))
+// /// Define an attribute that uses get and set free functions, and uses zero-based enum values, which are mapped to names through an array of C string pointers.
+// #define URHO3D_ENUM_ACCESSOR_ATTRIBUTE_FREE(name, getFunction, setFunction, typeName, enumNames, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(name, new Urho3D::EnumAttributeAccessorFreeImpl<ClassName, typeName >(getFunction, setFunction), enumNames, defaultValue, mode))
+// /// Define an attribute that uses get and set functions, where the get function returns by value, but the set function uses a reference.
+// #define URHO3D_MIXED_ACCESSOR_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, Urho3D::MixedAttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, mode))
+// /// Define an attribute that uses get and set free functions, where the get function returns by value, but the set function uses a reference.
+// #define URHO3D_MIXED_ACCESSOR_ATTRIBUTE_FREE(name, getFunction, setFunction, typeName, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorFreeImpl<ClassName, typeName, Urho3D::MixedAttributeTrait<typeName > >(getFunction, setFunction), defaultValue, mode))
+// /// Update the default value of an already registered attribute.
+// #define URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE(name, defaultValue) context->UpdateAttributeDefaultValue<ClassName>(name, defaultValue)
+// /// Define a variant structure attribute that uses get and set functions.
+// #define URHO3D_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, variantStructureElementNames, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, Urho3D::AttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, variantStructureElementNames, mode))
+// /// Define a variant structure attribute that uses get and set functions, where the get function returns by value, but the set function uses a reference.
+// #define URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, variantStructureElementNames, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, Urho3D::MixedAttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, variantStructureElementNames, mode))
 
 }

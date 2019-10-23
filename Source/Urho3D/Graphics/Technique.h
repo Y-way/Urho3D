@@ -43,6 +43,8 @@ enum PassLightingMode
 /// %Material rendering pass, which defines shaders and render state.
 class URHO3D_API Pass : public RefCounted
 {
+    URHO3D_REFCOUNTED(Pass)
+
 public:
     /// Construct.
     explicit Pass(const String& name);
@@ -207,9 +209,9 @@ public:
     /// Set whether requires desktop level hardware.
     void SetIsDesktop(bool enable);
     /// Create a new pass.
-    Pass* CreatePass(const String& name);
+    Pass* CreatePass(const String& passName);
     /// Remove a pass.
-    void RemovePass(const String& name);
+    void RemovePass(const String& passName);
     /// Reset shader pointers in all passes.
     void ReleaseShaders();
     /// Clone the technique. Passes will be deep copied to allow independent modification.
@@ -225,13 +227,13 @@ public:
     bool HasPass(unsigned passIndex) const { return passIndex < passes_.Size() && passes_[passIndex].Get() != nullptr; }
 
     /// Return whether has a pass by name. This overload should not be called in time-critical rendering loops; use a pre-acquired pass index instead.
-    bool HasPass(const String& name) const;
+    bool HasPass(const String& passName) const;
 
     /// Return a pass, or null if not found.
     Pass* GetPass(unsigned passIndex) const { return passIndex < passes_.Size() ? passes_[passIndex].Get() : nullptr; }
 
     /// Return a pass by name, or null if not found. This overload should not be called in time-critical rendering loops; use a pre-acquired pass index instead.
-    Pass* GetPass(const String& name) const;
+    Pass* GetPass(const String& passName) const;
 
     /// Return a pass that is supported for rendering, or null if not found.
     Pass* GetSupportedPass(unsigned passIndex) const
@@ -241,7 +243,7 @@ public:
     }
 
     /// Return a supported pass by name. This overload should not be called in time-critical rendering loops; use a pre-acquired pass index instead.
-    Pass* GetSupportedPass(const String& name) const;
+    Pass* GetSupportedPass(const String& passName) const;
 
     /// Return number of passes.
     unsigned GetNumPasses() const;

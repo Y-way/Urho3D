@@ -25,6 +25,9 @@
 #include "../Engine/Application.h"
 #include "../IO/IOEvents.h"
 #include "../IO/Log.h"
+// ATOMIC BEGIN
+#include "../Core/Profiler.h"
+// ATOMIC END
 
 #if defined(IOS) || defined(TVOS)
 #include "../Graphics/Graphics.h"
@@ -33,8 +36,17 @@
 
 #include "../DebugNew.h"
 
+// ATOMIC BEGIN
+#include "../Metrics/Metrics.h"
+#include "../Engine/EngineDefs.h"
+// ATOMIC END
+
 namespace Urho3D
 {
+
+// ATOMIC BEGIN
+bool Application::autoMetrics_ = false;
+// ATOMIC END
 
 #if defined(IOS) || defined(TVOS) || defined(__EMSCRIPTEN__)
 // Code for supporting SDL_iPhoneSetAnimationCallback() and emscripten_set_main_loop_arg()
@@ -53,6 +65,20 @@ Application::Application(Context* context) :
 {
     engineParameters_ = Engine::ParseParameters(GetArguments());
 
+    // ATOMIC BEGIN
+
+    // register metrics subsystem
+    context->RegisterSubsystem(new Metrics(context));
+
+    if (autoMetrics_ || engineParameters_[EP_AUTO_METRICS].GetBool())
+    {
+        // ensure autoMetrics reflects state
+        autoMetrics_ = true;
+        context->GetSubsystem<Metrics>()->Enable();
+    }
+
+    // ATOMIC END
+
     // Create the Engine, but do not initialize it yet. Subsystems except Graphics & Renderer are registered at this point
     engine_ = new Engine(context);
 
@@ -62,6 +88,10 @@ Application::Application(Context* context) :
 
 int Application::Run()
 {
+    // ATOMIC BEGIN
+    // Profiler requires main thread to be named "Main" as fps calculations depend on it.
+    URHO3D_PROFILE_THREAD("Main");
+    // ATOMIC END
 #if !defined(__GNUC__) || __EXCEPTIONS
     try
     {

@@ -29,8 +29,14 @@
 #include "../IO/Log.h"
 #include "../Resource/Decompress.h"
 
+#include <JO/jo_jpeg.h>
+
 #include <SDL/SDL_surface.h>
 #define STB_IMAGE_IMPLEMENTATION
+#ifdef URHO3D_PLATFORM_DESKTOP
+#include <libsquish/squish.h>
+#endif
+
 #include <STB/stb_image.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <STB/stb_image_write.h>
@@ -82,6 +88,26 @@ static const unsigned DDS_DXGI_FORMAT_BC2_UNORM = 74;
 static const unsigned DDS_DXGI_FORMAT_BC2_UNORM_SRGB = 75;
 static const unsigned DDS_DXGI_FORMAT_BC3_UNORM = 77;
 static const unsigned DDS_DXGI_FORMAT_BC3_UNORM_SRGB = 78;
+
+// ATOMIC BEGIN
+static const unsigned DDSD_CAPS = 0x00000001;
+static const unsigned DDSD_HEIGHT = 0x00000002;
+static const unsigned DDSD_WIDTH = 0x00000004;
+static const unsigned DDSD_PITCH = 0x00000008;
+static const unsigned DDSD_PIXELFORMAT = 0x00001000;
+static const unsigned DDSD_MIPMAPCOUNT = 0x00020000;
+static const unsigned DDSD_LINEARSIZE = 0x00080000;
+static const unsigned DDSD_DEPTH = 0x00800000;
+
+static const unsigned DDPF_ALPHAPIXELS = 0x00000001;
+static const unsigned DDPF_ALPHA = 0x00000002;
+static const unsigned DDPF_FOURCC = 0x00000004;
+static const unsigned DDPF_PALETTEINDEXED8 = 0x00000020;
+static const unsigned DDPF_RGB = 0x00000040;
+static const unsigned DDPF_LUMINANCE = 0x00020000;
+static const unsigned DDPF_NORMAL = 0x80000000;  // nvidia specific
+// ATOMIC END
+
 
 namespace Urho3D
 {
@@ -431,7 +457,7 @@ bool Image::BeginLoad(Deserializer& source)
                 unsigned numPixels = dataSize / sourcePixelByteSize;
 
 #define ADJUSTSHIFT(mask, l, r) \
-                if ((mask) >= 0x100) \
+                if ((mask) && ((mask) >= 0x100)) \
                 { \
                     while (((mask) >> (r)) >= 0x100) \
                     ++(r); \
@@ -773,7 +799,7 @@ bool Image::BeginLoad(Deserializer& source)
             return false;
         }
 
-        size_t imgSize = (size_t)features.width * features.height * (features.has_alpha ? 4 : 3);
+        size_t imgSize = (size_t)(features.width * features.height * (features.has_alpha ? 4 : 3));
         SharedArrayPtr<uint8_t> pixelData(new uint8_t[imgSize]);
 
         bool decodeError(false);
@@ -1298,8 +1324,17 @@ bool Image::SaveJPG(const String& fileName, int quality) const
 
 bool Image::SaveDDS(const String& fileName) const
 {
+#if !defined(URHO3D_PLATFORM_DESKTOP)
+
+    URHO3D_LOGERRORF("Image::SaveDDS - Unsupported on current platform: %s", fileName.CString());
+    return false;
+
+#else
     URHO3D_PROFILE(SaveImageDDS);
 
+    // auto* fileSystem = GetSubsystem<FileSystem>();
+    // if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
+    
     File outFile(context_, fileName, FILE_WRITE);
     if (!outFile.IsOpen())
     {
@@ -1346,6 +1381,101 @@ bool Image::SaveDDS(const String& fileName) const
         outFile.Write(levels[i]->GetData(), levels[i]->GetWidth() * levels[i]->GetHeight() * 4);
 
     return true;
+
+    if (data_)
+    {
+        
+        // #623 BEGIN TODO: Should have an abstract ImageReader and ImageWriter classes
+        // with subclasses for particular image output types. Also should have image settings in the image meta.
+        // ImageReader/Writers should also support a progress callback so UI can be updated.
+
+        if (!width_ || !height_)
+        {
+            URHO3D_LOGERRORF("Attempting to save zero width/height DDS to %s", fileName.CString());
+            return false;
+        }
+
+        squish::u8 *inputData = (squish::u8 *) data_.Get();
+
+        SharedPtr<Image> tempImage;
+
+        // libsquish expects 4 channel RGBA, so create a temporary image if necessary
+        if (components_ != 4)
+        {
+            if (components_ != 3)
+            {
+                URHO3D_LOGERROR("Can only save images with 3 or 4 components to DDS");
+                return false;
+            }
+
+            tempImage = new Image(context_);
+            tempImage->SetSize(width_, height_, 4);
+
+            squish::u8* srcBits = (squish::u8*) data_;
+            squish::u8* dstBits = (squish::u8*) tempImage->data_;
+
+            for (unsigned i = 0; i < (unsigned) width_ * (unsigned) height_; i++)
+            {
+                *dstBits++ = *srcBits++;
+                *dstBits++ = *srcBits++;
+                *dstBits++ = *srcBits++;
+                *dstBits++ = 255;
+            }
+
+            inputData = (squish::u8 *) tempImage->data_.Get();
+        }
+
+        unsigned squishFlags = HasAlphaChannel() ? squish::kDxt5 : squish::kDxt1;
+
+        // Use a slow but high quality colour compressor (the default). (TODO: expose other settings as parameter)
+        squishFlags |= squish::kColourClusterFit;
+
+        unsigned storageRequirements = (unsigned) squish::GetStorageRequirements( width_, height_,  squishFlags);
+
+        SharedArrayPtr<unsigned char> compressedData(new unsigned char[storageRequirements]);
+
+        squish::CompressImage(inputData, width_, height_, compressedData.Get(), squishFlags);
+
+        DDSurfaceDesc2 sdesc;
+
+        if (sizeof(sdesc) != 124)
+        {
+            URHO3D_LOGERROR("Image::SaveDDS - sizeof(DDSurfaceDesc2) != 124");
+            return false;
+        }
+        memset(&sdesc, 0, sizeof(sdesc));
+        sdesc.dwSize_ = 124;
+        sdesc.dwFlags_ = DDSD_CAPS | DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT;
+        sdesc.dwWidth_ = width_;
+        sdesc.dwHeight_ = height_;
+
+        sdesc.ddpfPixelFormat_.dwSize_ = 32;
+        sdesc.ddpfPixelFormat_.dwFlags_ = DDPF_FOURCC | (HasAlphaChannel() ? DDPF_ALPHAPIXELS : 0);
+        sdesc.ddpfPixelFormat_.dwFourCC_ = HasAlphaChannel() ? FOURCC_DXT5 : FOURCC_DXT1;
+
+        SharedPtr<File> dest(new File(context_, fileName, FILE_WRITE));
+
+        if (!dest->IsOpen())
+        {
+            URHO3D_LOGERRORF("Failed to open DXT image file for writing %s", fileName.CString());
+            return false;
+        }
+        else
+        {
+
+            dest->Write((void*)"DDS ", 4);
+            dest->Write((void*)&sdesc, sizeof(sdesc));
+
+            bool success = dest->Write(compressedData.Get(), storageRequirements) == storageRequirements;
+
+            if (!success)
+                URHO3D_LOGERRORF("Failed to write image to DXT, file size mismatch %s", fileName.CString());
+
+            return success;
+        }
+        // #623 END TODO
+    }
+#endif
 }
 
 bool Image::SaveWEBP(const String& fileName, float compression /* = 0.0f */) const
@@ -2338,6 +2468,7 @@ bool Image::SetSubimage(const Image* image, const IntRect& rect)
     const int destHeight = rect.Height();
     if (destWidth == image->GetWidth() && destHeight == image->GetHeight())
     {
+        // int components = Min((int)components_, (int)image->components_);
         unsigned char* src = image->GetData();
         unsigned char* dest = data_.Get() + (rect.top_ * width_ + rect.left_) * components_;
         for (int i = 0; i < destHeight; ++i)

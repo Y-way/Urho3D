@@ -220,12 +220,43 @@ static void GetGLPrimitiveType(unsigned elementCount, PrimitiveType type, unsign
 const Vector2 Graphics::pixelUVOffset(0.0f, 0.0f);
 bool Graphics::gl3Support = false;
 
-Graphics::Graphics(Context* context) :
-    Object(context),
+Graphics::Graphics(Context* context_) :
+    Object(context_),
     impl_(new GraphicsImpl()),
+    window_(0),
+    externalWindow_(0),
+    width_(0),
+    height_(0),
     position_(SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED),
+    multiSample_(1),
+    fullscreen_(false),
+    borderless_(false),
+    resizable_(false),
+    highDPI_(false),
+    vsync_(false),
+    monitor_(0),
+    refreshRate_(0),
+    tripleBuffer_(false),
+    sRGB_(false),
+    forceGL2_(false),
+    instancingSupport_(false),
+    lightPrepassSupport_(false),
+    deferredSupport_(false),
+    anisotropySupport_(false),
+    dxtTextureSupport_(false),
+    etcTextureSupport_(false),
+    pvrtcTextureSupport_(false),
+    hardwareShadowSupport_(false),
+    sRGBSupport_(false),
+    sRGBWriteSupport_(false),
+    numPrimitives_(0),
+    numBatches_(0),
+    maxScratchBufferRequest_(0),
+    dummyColorFormat_(0),
     shadowMapFormat_(GL_DEPTH_COMPONENT16),
     hiresShadowMapFormat_(GL_DEPTH_COMPONENT24),
+    defaultTextureFilterMode_(FILTER_TRILINEAR),
+    defaultTextureAnisotropy_(4),
     shaderPath_("Shaders/GLSL/"),
     shaderExtension_(".glsl"),
     orientations_("LandscapeLeft LandscapeRight"),
@@ -1637,19 +1668,19 @@ void Graphics::SetTextureParametersDirty()
 void Graphics::ResetRenderTargets()
 {
     for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
-        SetRenderTarget(i, (RenderSurface*)nullptr);
-    SetDepthStencil((RenderSurface*)nullptr);
+        SetRenderTarget(i, nullptr);
+    SetDepthStencil(nullptr);
     SetViewport(IntRect(0, 0, width_, height_));
 }
 
 void Graphics::ResetRenderTarget(unsigned index)
 {
-    SetRenderTarget(index, (RenderSurface*)nullptr);
+    SetRenderTarget(index, nullptr);
 }
 
 void Graphics::ResetDepthStencil()
 {
-    SetDepthStencil((RenderSurface*)nullptr);
+    SetDepthStencil(nullptr);
 }
 
 void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
@@ -2444,6 +2475,38 @@ void Graphics::Restore()
     if (!impl_->context_)
     {
         impl_->context_ = SDL_GL_CreateContext(window_);
+
+// ATOMIC BEGIN
+#if defined(__linux__)
+
+    String driverx( (const char*)glGetString(GL_VERSION) );
+    Vector<String>tokens = driverx.Split (' ');
+    if (tokens.Size() > 2) // must have enough tokens to work with
+    {
+        // Size() - 2 is the manufacturer, "Mesa" is the target
+        if ( tokens[ tokens.Size()-2].Compare ( "Mesa", false ) == 0 )
+        {
+            // Size() - 1  is the version number, convert to long, can be n | n.n | n.n.n
+            Vector<String>versionx = tokens[tokens.Size()-1].Split ('.');
+            int majver = 0;
+            int minver = 0;
+            int pointver = 0;
+            if ( tokens.Size() > 1 ) majver = atoi(versionx[0].CString());
+            if ( tokens.Size() > 2 ) minver = atoi(versionx[1].CString());
+            if ( tokens.Size() > 3 ) pointver = atoi(versionx[2].CString());
+
+            int allver = (majver * 10000) + (minver * 1000) + pointver;
+
+            if ( allver < 101004 ) // Mesa drivers less than this version cause linux display artifacts
+            {                      // so remove this context and let it fall back to GL2
+                SDL_GL_DeleteContext(impl_->context_);
+                impl_->context_ = NULL;
+                URHO3D_LOGINFOF ( "Mesa GL Driver: %s detected, forcing GL2 context creation.  Please use gl2 command line option to avoid this warning.", driverx.CString() );
+            }
+        }
+    }
+#endif
+// ATOMIC END
 
 #ifndef GL_ES_VERSION_2_0
         // If we're trying to use OpenGL 3, but context creation fails, retry with 2

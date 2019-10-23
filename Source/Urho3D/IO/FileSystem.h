@@ -38,6 +38,26 @@ static const unsigned SCAN_DIRS = 0x2;
 /// Return also hidden files.
 static const unsigned SCAN_HIDDEN = 0x4;
 
+// ATOMIC BEGIN
+
+/// Helper class to expose resource iteration to script
+class FileNameIterator : public RefCounted
+{
+    URHO3D_REFCOUNTED(FileNameIterator);
+public:
+    FileNameIterator();
+
+    const String& GetCurrent();
+    bool MoveNext();
+    void Reset();
+
+    Vector<String> filenames_;
+private:
+    unsigned index_;
+};
+
+// ATOMIC END
+
 /// Subsystem for file and directory operations and access control.
 class URHO3D_API FileSystem : public Object
 {
@@ -104,6 +124,21 @@ public:
     /// Return path of temporary directory. Path always ends with a forward slash.
     String GetTemporaryDir() const;
 
+// ATOMIC BEGIN
+    /// Scan specified files, returning them as an iterator
+    SharedPtr<FileNameIterator> ScanDir(const String& pathName, const String& filter, unsigned flags, bool recursive) const;
+
+    /// Check if a file or directory exists at the specified path
+    bool Exists(const String& pathName) const { return FileExists(pathName) || DirExists(pathName); }
+
+    bool CopyDir(const String& directoryIn, const String& directoryOut);
+
+    bool CreateDirs(const String& root, const String& subdirectory);
+    bool CreateDirsRecursive(const String& directoryIn);
+
+    bool RemoveDir(const String& directoryIn, bool recursive);
+// ATOMIC END
+
 private:
     /// Scan directory, called internally.
     void ScanDirInternal
@@ -133,7 +168,7 @@ URHO3D_API String GetFileName(const String& fullPath);
 /// Return the extension from a full path, converted to lowercase by default.
 URHO3D_API String GetExtension(const String& fullPath, bool lowercaseExtension = true);
 /// Return the filename and extension from a full path. The case of the extension is preserved by default, so that the file can be opened in case-sensitive operating systems.
-URHO3D_API String GetFileNameAndExtension(const String& fileName, bool lowercaseExtension = false);
+URHO3D_API String GetFileNameAndExtension(const String& fullPath, bool lowercaseExtension = false);
 /// Replace the extension of a file name with another.
 URHO3D_API String ReplaceExtension(const String& fullPath, const String& newExtension);
 /// Add a slash at the end of the path if missing and convert to internal format (use slashes.)
@@ -141,7 +176,7 @@ URHO3D_API String AddTrailingSlash(const String& pathName);
 /// Remove the slash from the end of a path if exists and convert to internal format (use slashes.)
 URHO3D_API String RemoveTrailingSlash(const String& pathName);
 /// Return the parent path, or the path itself if not available.
-URHO3D_API String GetParentPath(const String& path);
+URHO3D_API String GetParentPath(const String& pathName);
 /// Convert a path to internal format (use slashes.)
 URHO3D_API String GetInternalPath(const String& pathName);
 /// Convert a path to the format required by the operating system.
@@ -150,5 +185,14 @@ URHO3D_API String GetNativePath(const String& pathName);
 URHO3D_API WString GetWideNativePath(const String& pathName);
 /// Return whether a path is absolute.
 URHO3D_API bool IsAbsolutePath(const String& pathName);
+
+// ATOMIC BEGIN
+URHO3D_API bool IsAbsoluteParentPath(const String& absParentPath, const String& fullPath);
+URHO3D_API String GetSanitizedPath(const String& path);
+
+/// Given two absolute directory paths, get the relative path from one to the other
+/// Returns false if either path isn't absolute, or if they are unrelated
+URHO3D_API bool GetRelativePath(const String& fromPath, const String& toPath, String& output);
+// ATOMIC END
 
 }

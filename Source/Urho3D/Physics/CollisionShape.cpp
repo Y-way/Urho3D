@@ -524,7 +524,7 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         // Special case code for convex hull: bypass Bullet's own rendering to draw triangles correctly, not just edges
         if (shapeType_ == SHAPE_CONVEXHULL)
         {
-            auto*convexData = static_cast<ConvexData*>(GetGeometryData());
+            auto* convexData = static_cast<ConvexData*>(GetGeometryData());
             auto* body = GetComponent<RigidBody>();
             Color color = bodyActive ? Color::WHITE : Color::GREEN;
             Matrix3x4 shapeTransform(worldTransform * position_, worldTransform.Rotation() * rotation_, worldTransform.Scale());
