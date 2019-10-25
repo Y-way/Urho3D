@@ -20,36 +20,51 @@
 // THE SOFTWARE.
 //
 
-#pragma once
-
-#include "../../Container/RefCounted.h"
-#include "../../Container/Vector.h"
-#include "../../Graphics/GraphicsDefs.h"
+#include "../Container/TypeInfo.h"
+#include "../Container/Str.h"
 
 namespace Urho3D
 {
 
-class Graphics;
-class ShaderVariation;
-class VertexBuffer;
-
-/// Vertex declaration.
-class URHO3D_API VertexDeclaration : public RefCounted
+TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
+    type_(typeName),
+    typeName_(typeName),
+    baseTypeInfo_(baseTypeInfo)
 {
-    URHO3D_REFCOUNTED(VertexDeclaration, RefCounted)
+}
 
-public:
-    /// Construct with vertex buffers and element masks to base declaration on.
-    VertexDeclaration(Graphics* graphics, ShaderVariation* vertexShader, VertexBuffer** buffers);
-    /// Destruct.
-    virtual ~VertexDeclaration() override;
+TypeInfo::~TypeInfo() = default;
 
-    /// Return input layout object corresponding to the declaration.
-    void* GetInputLayout() const { return inputLayout_; }
+bool TypeInfo::IsTypeOf(StringHash type) const
+{
+    const TypeInfo* current = this;
+    while (current)
+    {
+        if (current->GetType() == type)
+            return true;
 
-private:
-    /// Input layout object.
-    void* inputLayout_;
-};
+        current = current->GetBaseTypeInfo();
+    }
+
+    return false;
+}
+
+bool TypeInfo::IsTypeOf(const TypeInfo* typeInfo) const
+{
+    if (typeInfo == nullptr)
+        return false;
+
+    const TypeInfo* current = this;
+    while (current)
+    {
+        if (current->GetType() == typeInfo->GetType())
+            return true;
+
+        current = current->GetBaseTypeInfo();
+    }
+
+    return false;
+}
+
 
 }

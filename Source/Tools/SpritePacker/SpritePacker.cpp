@@ -51,7 +51,7 @@ void Run(Vector<String>& arguments);
 
 class PackerInfo : public RefCounted
 {
-    URHO3D_REFCOUNTED(PackerInfo)
+    URHO3D_REFCOUNTED(PackerInfo, RefCount)
 
 public:
     String path;

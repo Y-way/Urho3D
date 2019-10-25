@@ -62,7 +62,7 @@ class Serializable;
 /// Abstract base class for invoking attribute accessors.
 class URHO3D_API AttributeAccessor : public RefCounted
 {
-    URHO3D_REFCOUNTED(SoundStream)
+    URHO3D_REFCOUNTED(AttributeAccessor, RefCounted)
 
 public:
     /// Get the attribute.

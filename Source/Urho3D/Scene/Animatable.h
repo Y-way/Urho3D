@@ -38,7 +38,7 @@ class ObjectAnimation;
 /// Attribute animation instance.
 class AttributeAnimationInfo : public ValueAnimationInfo
 {
-    URHO3D_REFCOUNTED(AttributeAnimationInfo)
+    URHO3D_REFCOUNTED(AttributeAnimationInfo, ValueAnimationInfo)
 
 public:
     /// Construct.

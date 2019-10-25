@@ -21,35 +21,44 @@
 //
 
 #pragma once
-
-#include "../../Container/RefCounted.h"
-#include "../../Container/Vector.h"
-#include "../../Graphics/GraphicsDefs.h"
+#include "../Math/StringHash.h"
 
 namespace Urho3D
 {
 
-class Graphics;
-class ShaderVariation;
-class VertexBuffer;
-
-/// Vertex declaration.
-class URHO3D_API VertexDeclaration : public RefCounted
+class StringHash;
+class String;
+/// Type info.
+class URHO3D_API TypeInfo
 {
-    URHO3D_REFCOUNTED(VertexDeclaration, RefCounted)
-
 public:
-    /// Construct with vertex buffers and element masks to base declaration on.
-    VertexDeclaration(Graphics* graphics, ShaderVariation* vertexShader, VertexBuffer** buffers);
+    /// Construct.
+    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
     /// Destruct.
-    virtual ~VertexDeclaration() override;
+    ~TypeInfo();
 
-    /// Return input layout object corresponding to the declaration.
-    void* GetInputLayout() const { return inputLayout_; }
+    /// Check current type is type of specified type.
+    bool IsTypeOf(StringHash type) const;
+    /// Check current type is type of specified type.
+    bool IsTypeOf(const TypeInfo* typeInfo) const;
+    /// Check current type is type of specified class type.
+    template<typename T> bool IsTypeOf() const { return IsTypeOf(T::GetTypeInfoStatic()); }
+
+    /// Return type.
+    StringHash GetType() const { return type_; }
+    /// Return type name.
+    const String& GetTypeName() const { return typeName_;}
+    /// Return base type info.
+    const TypeInfo* GetBaseTypeInfo() const { return baseTypeInfo_; }
 
 private:
-    /// Input layout object.
-    void* inputLayout_;
+    /// Type.
+    StringHash type_;
+    /// Type name.
+    String typeName_;
+    /// Base class type info.
+    const TypeInfo* baseTypeInfo_;
 };
+
 
 }
