@@ -34,7 +34,7 @@ class Texture2D;
 /// Free type font face description.
 class URHO3D_API FontFaceFreeType : public FontFace
 {
-    URHO3D_REFCOUNTED(FontFaceFreeType)
+    URHO3D_REFCOUNTED(FontFaceFreeType, FontFace)
 
 public:
     /// Construct.

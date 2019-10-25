@@ -52,7 +52,7 @@ struct BackgroundLoadItem
 /// Background loader of resources. Owned by the ResourceCache.
 class BackgroundLoader : public RefCounted, public Thread
 {
-    URHO3D_REFCOUNTED(BackgroundLoader)
+    URHO3D_REFCOUNTED(BackgroundLoader, RefCounted)
 
 public:
     /// Construct.

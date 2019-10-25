@@ -34,7 +34,7 @@ class Sound;
 /// Ogg Vorbis sound stream.
 class URHO3D_API OggVorbisSoundStream : public SoundStream
 {
-    URHO3D_REFCOUNTED(OggVorbisSoundStream)
+    URHO3D_REFCOUNTED(OggVorbisSoundStream, SoundStream)
 
 public:
     /// Construct from an Ogg Vorbis compressed sound.

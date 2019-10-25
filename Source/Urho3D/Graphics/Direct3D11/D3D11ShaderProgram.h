@@ -34,7 +34,7 @@ namespace Urho3D
 /// Combined information for specific vertex and pixel shaders.
 class URHO3D_API ShaderProgram : public RefCounted
 {
-    URHO3D_REFCOUNTED(ShaderProgram)
+    URHO3D_REFCOUNTED(ShaderProgram, RefCounted)
 
 public:
     /// Construct.

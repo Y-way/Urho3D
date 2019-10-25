@@ -104,7 +104,7 @@ enum TileMapObjectType2D
 /// Property set.
 class URHO3D_API PropertySet2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(PropertySet2D)
+    URHO3D_REFCOUNTED(PropertySet2D, RefCounted)
 
 public:
     PropertySet2D();
@@ -132,7 +132,7 @@ static const unsigned FLIP_ALL = FLIP_HORIZONTAL | FLIP_VERTICAL | FLIP_DIAGONAL
 /// Tile define.
 class URHO3D_API Tile2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(Tile2D)
+    URHO3D_REFCOUNTED(Tile2D, RefCounted)
 
 public:
     /// Construct.
@@ -168,7 +168,7 @@ private:
 /// Tile map object.
 class URHO3D_API TileMapObject2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(TileMapObject2D)
+    URHO3D_REFCOUNTED(TileMapObject2D, RefCounted)
 
 public:
     TileMapObject2D();

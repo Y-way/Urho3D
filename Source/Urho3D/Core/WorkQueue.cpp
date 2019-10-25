@@ -34,7 +34,7 @@ namespace Urho3D
 /// Worker thread managed by the work queue.
 class WorkerThread : public Thread, public RefCounted
 {
-    URHO3D_REFCOUNTED(WorkerThread)
+    URHO3D_REFCOUNTED(WorkerThread, RefCounted)
 
 public:
     /// Construct.
