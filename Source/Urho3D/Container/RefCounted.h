@@ -102,14 +102,16 @@ public:
 
     /// Adjust RefCounted subobject is Object. Always return false.
     virtual bool IsObject() const { return false; }
+
     /// Get the unique id of the class
     static ClassID GetClassIDStatic() { static const int typeID = 0; return (Urho3D::ClassID) &typeID; }
     /// Return type info static.
     static const TypeInfo* GetTypeInfoStatic() { return nullptr; }
-/// Check current type is type of specified type.
+    /// Check current type is type of specified type.
     static bool IsTypeOf(StringHash type) { return GetTypeInfoStatic()->IsTypeOf(type); }
     /// Check current type is type of specified type.
     static bool IsTypeOf(const TypeInfo* typeInfo) { return GetTypeInfoStatic()->IsTypeOf(typeInfo); }
+
     /// Check current type is type of specified class.
     template<typename T> static bool IsTypeOf() { return IsTypeOf(T::GetTypeInfoStatic()); }
     /// Check current instance is type of specified type.
