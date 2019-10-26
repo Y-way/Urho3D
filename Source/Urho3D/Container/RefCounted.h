@@ -79,7 +79,7 @@ public: \
     } \
     static const Urho3D::TypeInfo* GetTypeInfoStatic() \
     { \
-        static const void* typeId = 0; \
+        static const void* typeId = nullptr; \
         static const Urho3D::TypeInfo typeInfoStatic(#typeName, BaseClassName::GetTypeInfoStatic(), (TypeID)&typeId); \
         return &typeInfoStatic; \
     }
