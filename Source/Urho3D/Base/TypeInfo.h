@@ -21,6 +21,13 @@
 //
 
 #pragma once
+
+#ifdef URHO3D_IS_BUILDING
+#include "Urho3D.h"
+#else
+#include <Urho3D/Urho3D.h>
+#endif
+
 #include "../Math/StringHash.h"
 
 namespace Urho3D
@@ -28,12 +35,13 @@ namespace Urho3D
 
 class StringHash;
 class String;
+using TypeID = const void*;
 /// Type info.
 class URHO3D_API TypeInfo
 {
 public:
     /// Construct.
-    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
+    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo, TypeID typeID);
     /// Destruct.
     ~TypeInfo();
 
@@ -43,7 +51,6 @@ public:
     bool IsTypeOf(const TypeInfo* typeInfo) const;
     /// Check current type is type of specified class type.
     template<typename T> bool IsTypeOf() const { return IsTypeOf(T::GetTypeInfoStatic()); }
-
     /// Return type.
     StringHash GetType() const { return type_; }
     /// Return type name.

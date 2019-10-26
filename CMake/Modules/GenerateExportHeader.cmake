@@ -257,9 +257,9 @@ macro(_DO_SET_MACRO_VALUES TARGET_LIBRARY)
   set(DEFINE_NO_EXPORT)
 
   if (COMPILER_HAS_DEPRECATED_ATTR)
-    set(DEFINE_DEPRECATED "__attribute__ ((__deprecated__))")
+    set(DEFINE_DEPRECATED "__attribute__ ((__deprecated__(text)))")
   elseif(COMPILER_HAS_DEPRECATED)
-    set(DEFINE_DEPRECATED "__declspec(deprecated)")
+    set(DEFINE_DEPRECATED "__declspec(deprecated(_text_))")
   endif()
 
   # Urho3D: always generate header file regardless of target type
