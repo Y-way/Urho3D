@@ -20,17 +20,18 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/TypeInfo.h"
+#include "../Base/TypeInfo.h"
 #include "../Container/Str.h"
 
 namespace Urho3D
 {
 
-TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
-    type_(typeName),
+TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo, TypeID typeID) :
     typeName_(typeName),
     baseTypeInfo_(baseTypeInfo)
 {
+    
+    type_ = StringHash(reinterpret_cast<size_t>(typeID));
 }
 
 TypeInfo::~TypeInfo() = default;
@@ -57,7 +58,7 @@ bool TypeInfo::IsTypeOf(const TypeInfo* typeInfo) const
     const TypeInfo* current = this;
     while (current)
     {
-        if (current->GetType() == typeInfo->GetType())
+        if (current == typeInfo || (current->GetType() == typeInfo->GetType() && current->GetTypeName() == typeInfo->GetTypeName()))
             return true;
 
         current = current->GetBaseTypeInfo();

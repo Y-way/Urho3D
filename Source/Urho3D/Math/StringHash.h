@@ -43,7 +43,7 @@ public:
     StringHash(const StringHash& rhs) noexcept = default;
 
     /// Construct with an initial value.
-    explicit StringHash(unsigned value) noexcept :
+    explicit StringHash(size_t value) noexcept :
         value_(value)
     {
     }
@@ -109,7 +109,7 @@ public:
 
 private:
     /// Hash value.
-    unsigned value_;
+    size_t value_;
 };
 
 }
