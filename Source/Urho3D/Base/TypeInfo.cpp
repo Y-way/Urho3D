@@ -27,11 +27,11 @@ namespace Urho3D
 {
 
 TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo, TypeID typeID) :
+    type_(typeName),
     typeName_(typeName),
-    baseTypeInfo_(baseTypeInfo)
+    baseTypeInfo_(baseTypeInfo),
+    typeID_(reinterpret_cast<size_t>(typeID)) //Converts pointer address to size_t
 {
-    
-    type_ = StringHash(reinterpret_cast<size_t>(typeID));
 }
 
 TypeInfo::~TypeInfo() = default;
