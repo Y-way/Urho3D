@@ -327,76 +327,85 @@ void AnimatedSprite2D::UpdateSourceBatchesSpine()
             color_.g_ * slot->g,
             color_.b_ * slot->b,
             color_.a_ * slot->a).ToUInt();
-
-        if (attachment->type == SP_ATTACHMENT_REGION)
+        switch (attachment->type)
         {
-            spRegionAttachment* region = (spRegionAttachment*)attachment;
-            spRegionAttachment_computeWorldVertices(region, slot->bone, slotVertices);
-
-            Vertex2D vertices[4];
-            vertices[0].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X1], slotVertices[SP_VERTEX_Y1]);
-            vertices[1].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X2], slotVertices[SP_VERTEX_Y2]);
-            vertices[2].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X3], slotVertices[SP_VERTEX_Y3]);
-            vertices[3].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X4], slotVertices[SP_VERTEX_Y4]);
-
-            vertices[0].color_ = color;
-            vertices[1].color_ = color;
-            vertices[2].color_ = color;
-            vertices[3].color_ = color;
-
-            vertices[0].uv_ = Vector2(region->uvs[SP_VERTEX_X1], region->uvs[SP_VERTEX_Y1]);
-            vertices[1].uv_ = Vector2(region->uvs[SP_VERTEX_X2], region->uvs[SP_VERTEX_Y2]);
-            vertices[2].uv_ = Vector2(region->uvs[SP_VERTEX_X3], region->uvs[SP_VERTEX_Y3]);
-            vertices[3].uv_ = Vector2(region->uvs[SP_VERTEX_X4], region->uvs[SP_VERTEX_Y4]);
-
-            sourceBatches_[0].vertices_.Push(vertices[0]);
-            sourceBatches_[0].vertices_.Push(vertices[1]);
-            sourceBatches_[0].vertices_.Push(vertices[2]);
-            sourceBatches_[0].vertices_.Push(vertices[3]);
-        }
-        else if (attachment->type == SP_ATTACHMENT_MESH)
-        {
-            spMeshAttachment* mesh = (spMeshAttachment*)attachment;
-            if (mesh->verticesCount > SLOT_VERTEX_COUNT_MAX)
-                continue;
-
-            spMeshAttachment_computeWorldVertices(mesh, slot, slotVertices);
-
-            Vertex2D vertex;
-            vertex.color_ = color;
-            for (int j = 0; j < mesh->trianglesCount; ++j)
+            case SP_ATTACHMENT_REGION:
             {
-                int index = mesh->triangles[j] << 1;
-                vertex.position_ = worldTransform * Vector3(slotVertices[index], slotVertices[index + 1]);
-                vertex.uv_ = Vector2(mesh->uvs[index], mesh->uvs[index + 1]);
+                spRegionAttachment* region = (spRegionAttachment*)attachment;
+                spRegionAttachment_computeWorldVertices(region, slot->bone, slotVertices);
 
-                sourceBatches_[0].vertices_.Push(vertex);
-                // Add padding vertex
-                if (j % 3 == 2)
-                    sourceBatches_[0].vertices_.Push(vertex);
+                Vertex2D vertices[4];
+                vertices[0].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X1], slotVertices[SP_VERTEX_Y1]);
+                vertices[1].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X2], slotVertices[SP_VERTEX_Y2]);
+                vertices[2].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X3], slotVertices[SP_VERTEX_Y3]);
+                vertices[3].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X4], slotVertices[SP_VERTEX_Y4]);
+
+                vertices[0].color_ = color;
+                vertices[1].color_ = color;
+                vertices[2].color_ = color;
+                vertices[3].color_ = color;
+
+                vertices[0].uv_ = Vector2(region->uvs[SP_VERTEX_X1], region->uvs[SP_VERTEX_Y1]);
+                vertices[1].uv_ = Vector2(region->uvs[SP_VERTEX_X2], region->uvs[SP_VERTEX_Y2]);
+                vertices[2].uv_ = Vector2(region->uvs[SP_VERTEX_X3], region->uvs[SP_VERTEX_Y3]);
+                vertices[3].uv_ = Vector2(region->uvs[SP_VERTEX_X4], region->uvs[SP_VERTEX_Y4]);
+
+                sourceBatches_[0].vertices_.Push(vertices[0]);
+                sourceBatches_[0].vertices_.Push(vertices[1]);
+                sourceBatches_[0].vertices_.Push(vertices[2]);
+                sourceBatches_[0].vertices_.Push(vertices[3]); 
             }
-        }
-        else if (attachment->type == SP_ATTACHMENT_SKINNED_MESH)
-        {
-            spSkinnedMeshAttachment* skinnedMesh = (spSkinnedMeshAttachment*)attachment;
-            if (skinnedMesh->uvsCount > SLOT_VERTEX_COUNT_MAX)
-                continue;
+            break;
+            case SP_ATTACHMENT_MESH:
+            case SP_ATTACHMENT_LINKED_MESH:
+                {
+                    spMeshAttachment* mesh = (spMeshAttachment*)attachment;
+                    if (mesh->verticesCount > SLOT_VERTEX_COUNT_MAX)
+                        continue;
 
-            spSkinnedMeshAttachment_computeWorldVertices(skinnedMesh, slot, slotVertices);
+                    spMeshAttachment_computeWorldVertices(mesh, slot, slotVertices);
 
-            Vertex2D vertex;
-            vertex.color_ = color;
-            for (int j = 0; j < skinnedMesh->trianglesCount; ++j)
-            {
-                int index = skinnedMesh->triangles[j] << 1;
-                vertex.position_ = worldTransform * Vector3(slotVertices[index], slotVertices[index + 1]);
-                vertex.uv_ = Vector2(skinnedMesh->uvs[index], skinnedMesh->uvs[index + 1]);
+                    Vertex2D vertex;
+                    vertex.color_ = color;
+                    for (int j = 0; j < mesh->trianglesCount; ++j)
+                    {
+                        int index = mesh->triangles[j] << 1;
+                        vertex.position_ = worldTransform * Vector3(slotVertices[index], slotVertices[index + 1]);
+                        vertex.uv_ = Vector2(mesh->uvs[index], mesh->uvs[index + 1]);
 
-                sourceBatches_[0].vertices_.Push(vertex);
-                // Add padding vertex
-                if (j % 3 == 2)
-                    sourceBatches_[0].vertices_.Push(vertex);
-            }
+                        sourceBatches_[0].vertices_.Push(vertex);
+                        // Add padding vertex
+                        if (j % 3 == 2)
+                            sourceBatches_[0].vertices_.Push(vertex);
+                    }
+                }
+                break;
+            case SP_ATTACHMENT_WEIGHTED_MESH:
+            case SP_ATTACHMENT_WEIGHTED_LINKED_MESH:
+                {
+                    spWeightedMeshAttachment* skinnedMesh = (spWeightedMeshAttachment*)attachment;
+                    if (skinnedMesh->uvsCount > SLOT_VERTEX_COUNT_MAX)
+                        continue;
+
+                    spWeightedMeshAttachment_computeWorldVertices(skinnedMesh, slot, slotVertices);
+
+                    Vertex2D vertex;
+                    vertex.color_ = color;
+                    for (int j = 0; j < skinnedMesh->trianglesCount; ++j)
+                    {
+                        int index = skinnedMesh->triangles[j] << 1;
+                        vertex.position_ = worldTransform * Vector3(slotVertices[index], slotVertices[index + 1]);
+                        vertex.uv_ = Vector2(skinnedMesh->uvs[index], skinnedMesh->uvs[index + 1]);
+
+                        sourceBatches_[0].vertices_.Push(vertex);
+                        // Add padding vertex
+                        if (j % 3 == 2)
+                            sourceBatches_[0].vertices_.Push(vertex);
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
 }

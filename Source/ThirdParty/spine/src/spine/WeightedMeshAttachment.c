@@ -1,25 +1,26 @@
 /******************************************************************************
  * Spine Runtimes Software License
- * Version 2.1
+ * Version 2.3
  * 
- * Copyright (c) 2013, Esoteric Software
+ * Copyright (c) 2013-2015, Esoteric Software
  * All rights reserved.
  * 
  * You are granted a perpetual, non-exclusive, non-sublicensable and
- * non-transferable license to install, execute and perform the Spine Runtimes
- * Software (the "Software") solely for internal use. Without the written
- * permission of Esoteric Software (typically granted by licensing Spine), you
- * may not (a) modify, translate, adapt or otherwise create derivative works,
- * improvements of the Software or develop new applications using the Software
- * or (b) remove, delete, alter or obscure any trademarks or any copyright,
- * trademark, patent or other intellectual property or proprietary rights
- * notices on or in the Software, including any copy thereof. Redistributions
- * in binary or source form must include this license and terms.
+ * non-transferable license to use, install, execute and perform the Spine
+ * Runtimes Software (the "Software") and derivative works solely for personal
+ * or internal use. Without the written permission of Esoteric Software (see
+ * Section 2 of the Spine Software License Agreement), you may not (a) modify,
+ * translate, adapt or otherwise create derivative works, improvements of the
+ * Software or develop new applications using the Software or (b) remove,
+ * delete, alter or obscure any trademarks or any copyright, trademark, patent
+ * or other intellectual property or proprietary rights notices on or in the
+ * Software, including any copy thereof. Redistributions in binary or source
+ * form must include this license and terms.
  * 
  * THIS SOFTWARE IS PROVIDED BY ESOTERIC SOFTWARE "AS IS" AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
- * EVENT SHALL ESOTERIC SOFTARE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * EVENT SHALL ESOTERIC SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
  * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
@@ -28,33 +29,35 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#include <spine/SkinnedMeshAttachment.h>
+#include <spine/WeightedMeshAttachment.h>
 #include <spine/extension.h>
 
-void _spSkinnedMeshAttachment_dispose (spAttachment* attachment) {
-	spSkinnedMeshAttachment* self = SUB_CAST(spSkinnedMeshAttachment, attachment);
+void _spWeightedMeshAttachment_dispose (spAttachment* attachment) {
+	spWeightedMeshAttachment* self = SUB_CAST(spWeightedMeshAttachment, attachment);
 	_spAttachment_deinit(attachment);
 	FREE(self->path);
-	FREE(self->bones);
-	FREE(self->weights);
-	FREE(self->regionUVs);
 	FREE(self->uvs);
-	FREE(self->triangles);
-	FREE(self->edges);
+	if (!self->parentMesh) {
+		FREE(self->regionUVs);
+		FREE(self->bones);
+		FREE(self->weights);
+		FREE(self->triangles);
+		FREE(self->edges);
+	}
 	FREE(self);
 }
 
-spSkinnedMeshAttachment* spSkinnedMeshAttachment_create (const char* name) {
-	spSkinnedMeshAttachment* self = NEW(spSkinnedMeshAttachment);
+spWeightedMeshAttachment* spWeightedMeshAttachment_create (const char* name) {
+	spWeightedMeshAttachment* self = NEW(spWeightedMeshAttachment);
 	self->r = 1;
 	self->g = 1;
 	self->b = 1;
 	self->a = 1;
-	_spAttachment_init(SUPER(self), name, SP_ATTACHMENT_SKINNED_MESH, _spSkinnedMeshAttachment_dispose);
+	_spAttachment_init(SUPER(self), name, SP_ATTACHMENT_WEIGHTED_MESH, _spWeightedMeshAttachment_dispose);
 	return self;
 }
 
-void spSkinnedMeshAttachment_updateUVs (spSkinnedMeshAttachment* self) {
+void spWeightedMeshAttachment_updateUVs (spWeightedMeshAttachment* self) {
 	int i;
 	float width = self->regionU2 - self->regionU, height = self->regionV2 - self->regionV;
 	FREE(self->uvs);
@@ -72,7 +75,7 @@ void spSkinnedMeshAttachment_updateUVs (spSkinnedMeshAttachment* self) {
 	}
 }
 
-void spSkinnedMeshAttachment_computeWorldVertices (spSkinnedMeshAttachment* self, spSlot* slot, float* worldVertices) {
+void spWeightedMeshAttachment_computeWorldVertices (spWeightedMeshAttachment* self, spSlot* slot, float* worldVertices) {
 	int w = 0, v = 0, b = 0, f = 0;
 	float x = slot->bone->skeleton->x, y = slot->bone->skeleton->y;
 	spBone** skeletonBones = slot->bone->skeleton->bones;
@@ -84,8 +87,8 @@ void spSkinnedMeshAttachment_computeWorldVertices (spSkinnedMeshAttachment* self
 			for (; v <= nn; v++, b += 3) {
 				const spBone* bone = skeletonBones[self->bones[v]];
 				const float vx = self->weights[b], vy = self->weights[b + 1], weight = self->weights[b + 2];
-				wx += (vx * bone->m00 + vy * bone->m01 + bone->worldX) * weight;
-				wy += (vx * bone->m10 + vy * bone->m11 + bone->worldY) * weight;
+				wx += (vx * bone->a + vy * bone->b + bone->worldX) * weight;
+				wy += (vx * bone->c + vy * bone->d + bone->worldY) * weight;
 			}
 			worldVertices[w] = wx + x;
 			worldVertices[w + 1] = wy + y;
@@ -99,11 +102,36 @@ void spSkinnedMeshAttachment_computeWorldVertices (spSkinnedMeshAttachment* self
 			for (; v <= nn; v++, b += 3, f += 2) {
 				const spBone* bone = skeletonBones[self->bones[v]];
 				const float vx = self->weights[b] + ffd[f], vy = self->weights[b + 1] + ffd[f + 1], weight = self->weights[b + 2];
-				wx += (vx * bone->m00 + vy * bone->m01 + bone->worldX) * weight;
-				wy += (vx * bone->m10 + vy * bone->m11 + bone->worldY) * weight;
+				wx += (vx * bone->a + vy * bone->b + bone->worldX) * weight;
+				wy += (vx * bone->c + vy * bone->d + bone->worldY) * weight;
 			}
 			worldVertices[w] = wx + x;
 			worldVertices[w + 1] = wy + y;
 		}
+	}
+}
+
+void spWeightedMeshAttachment_setParentMesh (spWeightedMeshAttachment* self, spWeightedMeshAttachment* parentMesh) {
+	CONST_CAST(spWeightedMeshAttachment*, self->parentMesh) = parentMesh;
+	if (parentMesh) {
+		self->bones = parentMesh->bones;
+		self->bonesCount = parentMesh->bonesCount;
+
+		self->weights = parentMesh->weights;
+		self->weightsCount = parentMesh->weightsCount;
+
+		self->regionUVs = parentMesh->regionUVs;
+		self->uvsCount = parentMesh->uvsCount;
+
+		self->triangles = parentMesh->triangles;
+		self->trianglesCount = parentMesh->trianglesCount;
+
+		self->hullLength = parentMesh->hullLength;
+
+		self->edges = parentMesh->edges;
+		self->edgesCount = parentMesh->edgesCount;
+
+		self->width = parentMesh->width;
+		self->height = parentMesh->height;
 	}
 }

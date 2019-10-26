@@ -83,10 +83,10 @@ void Urho2DSpriterAnimation::CreateScene()
 
     auto* graphics = GetSubsystem<Graphics>();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
-    camera->SetZoom(1.5f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.5) is set for full visibility at 1280x800 resolution)
+    camera->SetZoom(1.0f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.5) is set for full visibility at 1280x800 resolution)
 
     auto* cache = GetSubsystem<ResourceCache>();
-    auto* spriterAnimationSet = cache->GetResource<AnimationSet2D>("Urho2D/imp/imp.scml");
+    auto* spriterAnimationSet = cache->GetResource<AnimationSet2D>("Urho2D/spine/spineboy.json");
     if (!spriterAnimationSet)
         return;
 
@@ -94,6 +94,8 @@ void Urho2DSpriterAnimation::CreateScene()
     auto* spriterAnimatedSprite = spriterNode_->CreateComponent<AnimatedSprite2D>();
     spriterAnimatedSprite->SetAnimationSet(spriterAnimationSet);
     spriterAnimatedSprite->SetAnimation(spriterAnimationSet->GetAnimation(spriterAnimationIndex_));
+
+
 }
 
 void Urho2DSpriterAnimation::CreateInstructions()
