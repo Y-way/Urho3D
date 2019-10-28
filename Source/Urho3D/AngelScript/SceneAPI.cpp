@@ -278,7 +278,7 @@ static CScriptArray* GetObjectsByCategory(const String& category)
         {
             HashMap<StringHash, SharedPtr<ObjectFactory> >::ConstIterator k = factories.Find(factoryHashes[j]);
             if (k != factories.End())
-                components.Push(k->second_->GetTypeName());
+                components.Push(k->second_->GetObjectTypeName());
         }
     }
 

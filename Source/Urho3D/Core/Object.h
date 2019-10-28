@@ -157,19 +157,19 @@ public:
     Context* GetContext() const { return context_; }
 
     /// Return type info of objects created by this factory.
-    const TypeInfo* GetFactoryTypeInfo() const { return typeInfo_; }
+    const TypeInfo* GetObjectTypeInfo() const { return objectTypeInfo_; }
 
     /// Return type hash of objects created by this factory.
-    StringHash GetFactoryType() const { return typeInfo_->GetType(); }
+    StringHash GetObjectType() const { return objectTypeInfo_->GetType(); }
 
     /// Return type name of objects created by this factory.
-    const String& GetFactoryTypeName() const { return typeInfo_->GetTypeName(); }
+    const String& GetObjectTypeName() const { return objectTypeInfo_->GetTypeName(); }
 
 protected:
     /// Execution context.
     Context* context_;
     /// Type info.
-    const TypeInfo* typeInfo_{};
+    const TypeInfo* objectTypeInfo_{};
 };
 
 /// Template implementation of the object factory.
@@ -182,7 +182,7 @@ public:
     explicit ObjectFactoryImpl(Context* context) :
         ObjectFactory(context)
     {
-        typeInfo_ = T::GetTypeInfoStatic();
+        objectTypeInfo_ = T::GetTypeInfoStatic();
     }
 
     /// Create an object of the specific type.

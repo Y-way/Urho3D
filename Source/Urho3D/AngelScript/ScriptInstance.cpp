@@ -701,7 +701,7 @@ void ScriptInstance::GetScriptAttributes()
             if (j != factories.End())
             {
                 // Check base class type. Node & Component are supported as ID attributes, Resource as a resource reference
-                const TypeInfo* typeInfo = j->second_->GetTypeInfo();
+                const TypeInfo* typeInfo = j->second_->GetObjectTypeInfo();
                 if (typeInfo->IsTypeOf<Node>())
                 {
                     info.mode_ |= AM_NODEID;
