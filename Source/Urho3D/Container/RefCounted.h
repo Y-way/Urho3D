@@ -75,7 +75,7 @@ public: \
     static Urho3D::StringHash GetBaseTypeStatic() \
     { \
         const Urho3D::TypeInfo* baseInfo = GetTypeInfoStatic()->GetBaseTypeInfo(); \
-        return baseInfo ? baseInfo->GetType() : 0; \
+        return baseInfo ? baseInfo->GetType() : StringHash::ZERO; \
     } \
     static const Urho3D::TypeInfo* GetTypeInfoStatic() \
     { \
