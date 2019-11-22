@@ -35,13 +35,12 @@ namespace Urho3D
 
 class StringHash;
 class String;
-using TypeID = const void*;
 /// Type info.
 class URHO3D_API TypeInfo
 {
 public:
     /// Construct.
-    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo, TypeID typeID);
+    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
     /// Destruct.
     ~TypeInfo();
 
@@ -57,8 +56,6 @@ public:
     const String& GetTypeName() const { return typeName_;}
     /// Return base type info.
     const TypeInfo* GetBaseTypeInfo() const { return baseTypeInfo_; }
-    /// Return the class unique ID.
-    size_t GetTypeID() const { return typeID_; }
 
 private:
     /// Type.
@@ -67,8 +64,6 @@ private:
     String typeName_;
     /// Base class type info.
     const TypeInfo* baseTypeInfo_;
-    /// Unique ID
-    size_t typeID_;
 };
 
 
