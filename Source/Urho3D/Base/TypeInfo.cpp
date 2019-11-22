@@ -26,11 +26,10 @@
 namespace Urho3D
 {
 
-TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo, TypeID typeID) :
+TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
     type_(typeName),
     typeName_(typeName),
-    baseTypeInfo_(baseTypeInfo),
-    typeID_(reinterpret_cast<size_t>(typeID)) //Converts pointer address to size_t
+    baseTypeInfo_(baseTypeInfo)
 {
 }
 
