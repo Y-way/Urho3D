@@ -120,6 +120,7 @@ Urho3D development, contributions and bugfixes by:
 - OvermindDL1
 - Polynominal
 - PredatorMF
+- PsychoCircuitry
 - Scellow
 - Skrylar
 - SuperWangKai
@@ -156,6 +157,7 @@ Urho3D development, contributions and bugfixes by:
 - ninjastone
 - orefkov
 - pat2nav
+- pflat
 - proller
 - r-a-sattarov
 - raould
