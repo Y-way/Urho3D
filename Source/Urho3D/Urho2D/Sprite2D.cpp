@@ -168,21 +168,32 @@ bool Sprite2D::GetTextureRectangle(Rect& rect, bool flipX, bool flipY) const
     if (!texture_)
         return false;
 
-    const float invWidth{ 1.0f / texture_->GetWidth() };
-    const float invHeight{ 1.0f / texture_->GetHeight() };
-
-    rect.min_.x_ = (rectangle_.left_ + edgeOffset_) * invWidth;
-    rect.max_.x_ = (rectangle_.right_ - edgeOffset_) * invWidth;
-    rect.min_.y_ = (rectangle_.bottom_ - edgeOffset_) * invHeight;
-    rect.max_.y_ = (rectangle_.top_ + edgeOffset_) * invHeight;
-
-    if (flipX)
-        Swap(rect.min_.x_, rect.max_.x_);
-
-    if (flipY)
-        Swap(rect.min_.y_, rect.max_.y_);
+    rect = GetTextureRectangle(flipX, flipY);
 
     return true;
+}
+Rect Sprite2D::GetTextureRectangle(bool flipX, bool flipY) const
+{
+    Rect rect{};
+
+    if (texture_)
+    {
+        const float invWidth{ 1.0f / texture_->GetWidth() };
+        const float invHeight{ 1.0f / texture_->GetHeight() };
+
+        rect.min_.x_ = (rectangle_.left_ + edgeOffset_) * invWidth;
+        rect.max_.x_ = (rectangle_.right_ - edgeOffset_) * invWidth;
+        rect.min_.y_ = (rectangle_.bottom_ - edgeOffset_) * invHeight;
+        rect.max_.y_ = (rectangle_.top_ + edgeOffset_) * invHeight;
+
+        if (flipX)
+            Swap(rect.min_.x_, rect.max_.x_);
+
+        if (flipY)
+            Swap(rect.min_.y_, rect.max_.y_);
+    }
+
+    return rect;
 }
 
 ResourceRef Sprite2D::SaveToResourceRef(Sprite2D* sprite)

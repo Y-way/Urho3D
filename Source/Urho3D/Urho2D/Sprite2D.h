@@ -86,6 +86,8 @@ public:
     bool GetDrawRectangle(Rect& rect, const Vector2& hotSpot, bool flipX = false, bool flipY = false) const;
     /// Return texture rectangle.
     bool GetTextureRectangle(Rect& rect, bool flipX = false, bool flipY = false) const;
+    /// Construct texture rectangle.
+    Rect GetTextureRectangle(bool flipX = false, bool flipY = false) const;
 
     /// Save sprite to ResourceRef.
     static ResourceRef SaveToResourceRef(Sprite2D* sprite);

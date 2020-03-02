@@ -348,10 +348,8 @@ Vector2 StaticSprite2D::VertexUV(int index) const
         index ^= 1; // 0 <-> 1, 2 <-> 3
 
     Vector2 uv{};
-    Rect textureRect{ textureRect_ };
-
-    if (!useTextureRect_)
-        sprite_->GetTextureRectangle(textureRect, false, false);
+    Rect textureRect{ useTextureRect_ ? textureRect_
+                                      : sprite_->GetTextureRectangle(false, false) };
 
     switch (index) { default: break;
     case 0: uv = textureRect.min_; break;
