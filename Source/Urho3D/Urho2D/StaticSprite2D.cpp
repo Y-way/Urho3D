@@ -340,16 +340,16 @@ Vector3 StaticSprite2D::VertexPosition(int index) const
 
 Vector2 StaticSprite2D::VertexUV(int index) const
 {
-    if (swapXY_ && ~index & 1)
-        index ^= 2; // 0 <-> 2
+    if (swapXY_ && ~index & 0b01)
+        index ^= 0b10; // 0 <-> 2
     if (flipX_)
-        index ^= 3; // 0 <-> 3, 1 <-> 2
+        index ^= 0b11; // 0 <-> 3, 1 <-> 2
     if (flipY_)
-        index ^= 1; // 0 <-> 1, 2 <-> 3
+        index ^= 0b01; // 0 <-> 1, 2 <-> 3
 
     Vector2 uv{};
-    Rect textureRect{ useTextureRect_ ? textureRect_
-                                      : sprite_->GetTextureRectangle(false, false) };
+    const Rect textureRect{ useTextureRect_ ? textureRect_
+                                            : sprite_->GetTextureRectangle(false, false) };
 
     switch (index) { default: break;
     case 0: uv = textureRect.min_; break;
