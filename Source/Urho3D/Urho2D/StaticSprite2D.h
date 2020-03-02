@@ -72,61 +72,45 @@ public:
     void SetHotSpot(const Vector2& hotspot);
     /// Set custom material.
     void SetCustomMaterial(Material* customMaterial);
+    /// Set sprite attribute.
+    void SetSpriteAttr(const ResourceRef& value);
+    /// Set custom material attribute.
+    void SetCustomMaterialAttr(const ResourceRef& value);
 
     /// Return sprite.
     Sprite2D* GetSprite() const;
-
     /// Return draw rect.
     const Rect& GetDrawRect() const { return drawRect_; }
-
     /// Return texture rect.
     const Rect& GetTextureRect() const { return textureRect_; }
-
     /// Return blend mode.
     BlendMode GetBlendMode() const { return blendMode_; }
-
     /// Return flip X.
     bool GetFlipX() const { return flipX_; }
-
     /// Return flip Y.
     bool GetFlipY() const { return flipY_; }
-
     /// Return swap X and Y.
     bool GetSwapXY() const { return swapXY_; }
-
     /// Return color.
     const Color& GetColor() const { return color_; }
-
     /// Return alpha.
     float GetAlpha() const { return color_.a_; }
-
     /// Return whether to use custom-defined hot spot.
     bool GetUseHotSpot() const { return useHotSpot_; }
-
     /// Return whether to use custom-defined draw rectangle.
     bool GetUseDrawRect() const { return useDrawRect_; }
-
     /// Return whether to use custom-defined texture rectangle.
     bool GetUseTextureRect() const { return useTextureRect_; }
-
     /// Return hot spot.
     const Vector2& GetHotSpot() const { return hotSpot_; }
-
     /// Return custom material.
     Material* GetCustomMaterial() const;
-
-    /// Set sprite attribute.
-    void SetSpriteAttr(const ResourceRef& value);
     /// Return sprite attribute.
     ResourceRef GetSpriteAttr() const;
-    /// Set custom material attribute.
-    void SetCustomMaterialAttr(const ResourceRef& value);
     /// Return custom material attribute.
     ResourceRef GetCustomMaterialAttr() const;
 
-
 protected:
-
     /// Handle scene being assigned.
     void OnSceneSet(Scene* scene) override;
     /// Recalculate the world-space bounding box.
@@ -166,6 +150,13 @@ protected:
     Rect textureRect_;
     /// Custom material.
     SharedPtr<Material> customMaterial_;
+
+private:
+    /// Construct single base vertex position for batch
+    Vector3 VertexPosition(int index) const;
+    /// Construct single UV coordinate for batch
+    Vector2 VertexUV(int index) const;
+
 };
 
 }

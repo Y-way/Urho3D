@@ -41,17 +41,17 @@ extern const char* blendModeNames[];
 
 StaticSprite2D::StaticSprite2D(Context* context) :
     Drawable2D(context),
-    blendMode_(BLEND_ALPHA),
-    flipX_(false),
-    flipY_(false),
-    swapXY_(false),
-    color_(Color::WHITE),
-    useHotSpot_(false),
-    useDrawRect_(false),
-    useTextureRect_(false),
-    hotSpot_(0.5f, 0.5f),
-    drawRect_(Rect::ZERO),
-    textureRect_(Rect::ZERO)
+    blendMode_{ BLEND_ALPHA },
+    flipX_{ false },
+    flipY_{ false },
+    swapXY_{ false },
+    color_{ Color::WHITE },
+    useHotSpot_{ false },
+    useDrawRect_{ false },
+    useTextureRect_{ false },
+    hotSpot_{ 0.5f, 0.5f },
+    drawRect_{ Rect::ZERO },
+    textureRect_{ Rect::ZERO }
 {
     sourceBatches_.Resize(1);
     sourceBatches_[0].owner_ = this;
@@ -247,7 +247,8 @@ Material* StaticSprite2D::GetCustomMaterial() const
 
 void StaticSprite2D::SetSpriteAttr(const ResourceRef& value)
 {
-    Sprite2D* sprite = Sprite2D::LoadFromResourceRef(this, value);
+    auto* sprite = Sprite2D::LoadFromResourceRef(this, value);
+
     if (sprite)
         SetSprite(sprite);
 }
@@ -280,8 +281,9 @@ void StaticSprite2D::OnWorldBoundingBoxUpdate()
     boundingBox_.Clear();
     worldBoundingBox_.Clear();
 
-    const Vector<SourceBatch2D>& sourceBatches = GetSourceBatches();
-    for (unsigned i = 0; i < sourceBatches[0].vertices_.Size(); ++i)
+    const Vector<SourceBatch2D>& sourceBatches{ GetSourceBatches() };
+
+    for (unsigned i{ 0 }; i < sourceBatches[0].vertices_.Size(); ++i)
         worldBoundingBox_.Merge(sourceBatches[0].vertices_[i].position_);
 
     boundingBox_ = worldBoundingBox_.Transformed(node_->GetWorldTransform().Inverse());
@@ -297,94 +299,76 @@ void StaticSprite2D::UpdateSourceBatches()
     if (!sourceBatchesDirty_)
         return;
 
-    Vector<Vertex2D>& vertices = sourceBatches_[0].vertices_;
+    Vector<Vertex2D>& vertices{ sourceBatches_[0].vertices_ };
     vertices.Clear();
 
-    if (!sprite_)
+    if (!sprite_ ||
+        !useTextureRect_ && !sprite_->GetTextureRectangle(textureRect_, flipX_, flipY_))
+    {
         return;
-
-    if (!useTextureRect_)
-    {
-        //Ignore FlipX and FlipY for now, and deal with them in the following logical later
-        if (!sprite_->GetTextureRectangle(textureRect_, false, false))
-            return;
     }
-
-    /*
-    V1---------V2
-    |         / |
-    |       /   |
-    |     /     |
-    |   /       |
-    | /         |
-    V0---------V3
-    */
-    Vertex2D vertex0;
-    Vertex2D vertex1;
-    Vertex2D vertex2;
-    Vertex2D vertex3;
-
-    // Convert to world space
-    const Matrix3x4& worldTransform = node_->GetWorldTransform();
-    vertex0.position_ = worldTransform * Vector3(drawRect_.min_.x_, drawRect_.min_.y_, 0.0f);
-    vertex1.position_ = worldTransform * Vector3(drawRect_.min_.x_, drawRect_.max_.y_, 0.0f);
-    vertex2.position_ = worldTransform * Vector3(drawRect_.max_.x_, drawRect_.max_.y_, 0.0f);
-    vertex3.position_ = worldTransform * Vector3(drawRect_.max_.x_, drawRect_.min_.y_, 0.0f);
-    //In the following logic, it needs flip diagonal first, and flip x-coordinate or y-coordinate then.
-    //Otherwise, the rendering will be wrong.
-    if (!swapXY_)
-    {
-        //Normal vertexes`s coordinates
-        vertex0.uv_ = textureRect_.min_;
-        vertex1.uv_ = Vector2(textureRect_.min_.x_, textureRect_.max_.y_);
-        vertex2.uv_ = textureRect_.max_;
-        vertex3.uv_ = Vector2(textureRect_.max_.x_, textureRect_.min_.y_);
-        
-    }
-    else //Swap diagonal
-    {
-        vertex0.uv_ = textureRect_.max_;
-        vertex1.uv_ = Vector2(textureRect_.min_.x_, textureRect_.max_.y_);
-        vertex2.uv_ = textureRect_.min_;
-        vertex3.uv_ = Vector2(textureRect_.max_.x_, textureRect_.min_.y_);
-    }
-    
-    if (flipX_)
-    {
-        //Flip the horizontal vertexes`s coordinates
-        Swap(vertex0.uv_, vertex3.uv_);
-        Swap(vertex1.uv_, vertex2.uv_);
-
-        //Flip x-axis for texture rectangle
-        if(!useTextureRect_)
-            Swap(textureRect_.min_.x_, textureRect_.max_.x_);
-    }
-
-    if (flipY_)
-    {
-        //Flip the vertical vertexes`s coordinates
-        Swap(vertex0.uv_, vertex1.uv_);
-        Swap(vertex3.uv_, vertex2.uv_);
-
-        //Flip y-axis for texture rectangle
-        if(!useTextureRect_)
-            Swap(textureRect_.min_.y_, textureRect_.max_.y_);
-    }
-    
-    vertex0.color_ = vertex1.color_ = vertex2.color_ = vertex3.color_ = color_.ToUInt();
-
-    vertices.Push(vertex0);
-    vertices.Push(vertex1);
-    vertices.Push(vertex2);
-    vertices.Push(vertex3);
+/*
+     V1----V2
+     |    / |
+     |   /  |
+     |  /   |
+     | /    |
+     V0----V3
+*/
+    for (int v{ 0 }; v < 4; ++v)
+        vertices.Push(Vertex2D{ VertexPosition(v),
+                                color_.ToUInt(),
+                                VertexUV(v) });
 
     sourceBatchesDirty_ = false;
+}
+
+Vector3 StaticSprite2D::VertexPosition(int index) const
+{
+    const Matrix3x4& worldTransform{ node_->GetWorldTransform() };
+    Vector3 pos{};
+
+    switch (index) { default: break;
+    case 0: pos = worldTransform * Vector3{ drawRect_.min_.x_, drawRect_.min_.y_, 0.0f }; break;
+    case 1: pos = worldTransform * Vector3{ drawRect_.min_.x_, drawRect_.max_.y_, 0.0f }; break;
+    case 2: pos = worldTransform * Vector3{ drawRect_.max_.x_, drawRect_.max_.y_, 0.0f }; break;
+    case 3: pos = worldTransform * Vector3{ drawRect_.max_.x_, drawRect_.min_.y_, 0.0f }; break;
+    }
+
+    return pos;
+}
+
+Vector2 StaticSprite2D::VertexUV(int index) const
+{
+    if (swapXY_ && ~index & 1)
+        index ^= 2; // 0 <-> 2
+    if (flipX_)
+        index ^= 3; // 0 <-> 3, 1 <-> 2
+    if (flipY_)
+        index ^= 1; // 0 <-> 1, 2 <-> 3
+
+    Vector2 uv{};
+    Rect textureRect{ textureRect_ };
+
+    if (!useTextureRect_)
+        sprite_->GetTextureRectangle(textureRect, false, false);
+
+    switch (index) { default: break;
+    case 0: uv = textureRect.min_; break;
+    case 1: uv = Vector2{ textureRect.min_.x_, textureRect.max_.y_ }; break;
+    case 2: uv = textureRect.max_; break;
+    case 3: uv = Vector2{ textureRect.max_.x_, textureRect.min_.y_ }; break;
+    }
+
+    return uv;
 }
 
 void StaticSprite2D::UpdateMaterial()
 {
     if (customMaterial_)
+    {
         sourceBatches_[0].material_ = customMaterial_;
+    }
     else
     {
         if (sprite_ && renderer_)
