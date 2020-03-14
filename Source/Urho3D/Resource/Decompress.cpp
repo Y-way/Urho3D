@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2019 the Urho3D project.
+// Copyright (c) 2008-2020 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -831,7 +831,7 @@ void FlipBlockVertical(unsigned char* dest, const unsigned char* src, Compressed
         break;
 
     default:
-        /// ETC1 & PVRTC not yet implemented
+        // ETC1 & PVRTC not yet implemented
         break;
     }
 }
@@ -896,7 +896,7 @@ void FlipBlockHorizontal(unsigned char* dest, const unsigned char* src, Compress
         break;
 
     default:
-        /// ETC1 & PVRTC not yet implemented
+        // ETC1 & PVRTC not yet implemented
         break;
     }
 }

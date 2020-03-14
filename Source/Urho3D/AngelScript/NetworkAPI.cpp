@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2019 the Urho3D project.
+// Copyright (c) 2008-2020 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -172,7 +172,7 @@ void RegisterNetwork(asIScriptEngine* engine)
     engine->RegisterObjectMethod("Network", "void Disconnect(int waitMSec = 0)", asMETHOD(Network, Disconnect), asCALL_THISCALL);
     engine->RegisterObjectMethod("Network", "bool StartServer(uint16, uint maxConnections = 128)", asMETHOD(Network, StartServer), asCALL_THISCALL);
     engine->RegisterObjectMethod("Network", "bool DiscoverHosts(uint16)", asMETHOD(Network, DiscoverHosts), asCALL_THISCALL);
-	engine->RegisterObjectMethod("Network", "bool SetDiscoveryBeacon(const VariantMap&in data = VariantMap())", asMETHOD(Network, SetDiscoveryBeacon), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Network", "bool SetDiscoveryBeacon(const VariantMap&in data = VariantMap())", asMETHOD(Network, SetDiscoveryBeacon), asCALL_THISCALL);
     engine->RegisterObjectMethod("Network", "bool SetPassword(const String&password)", asMETHOD(Network, SetPassword), asCALL_THISCALL);
     engine->RegisterObjectMethod("Network", "void StopServer()", asMETHOD(Network, StopServer), asCALL_THISCALL);
     engine->RegisterObjectMethod("Network", "void SetNATServerInfo(const String&in, uint16)", asMETHOD(Network, SetNATServerInfo), asCALL_THISCALL);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2019 the Urho3D project.
+// Copyright (c) 2008-2020 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ namespace Urho3D
 class Button;
 class BorderImage;
 class DropDownList;
+class Engine;
 class Font;
 class LineEdit;
 class ListView;
@@ -181,7 +182,7 @@ private:
     Vector<String> autoComplete_;
     /// Command auto complete current position.
     unsigned autoCompletePosition_;
-    /// Store the original line which is being auto-completed
+    /// Store the original line which is being auto-completed.
     String autoCompleteLine_;
 
     /// Flag when printing messages to prevent endless loop.
