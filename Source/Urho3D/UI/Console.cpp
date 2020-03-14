@@ -25,7 +25,7 @@
 #include "../Core/Context.h"
 #include "../Base/Algorithm.h"
 #include "../Core/CoreEvents.h"
-#include "../Engine/Console.h"
+#include "../UI/Console.h"
 #include "../Engine/EngineEvents.h"
 #include "../Graphics/Graphics.h"
 #include "../Input/Input.h"

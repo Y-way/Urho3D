@@ -26,7 +26,7 @@
 #include "../Core/Profiler.h"
 #include "../Core/EventProfiler.h"
 #include "../Core/Context.h"
-#include "../Engine/DebugHud.h"
+#include "../UI/DebugHud.h"
 #include "../Engine/Engine.h"
 #include "../Graphics/Graphics.h"
 #include "../Graphics/Renderer.h"
