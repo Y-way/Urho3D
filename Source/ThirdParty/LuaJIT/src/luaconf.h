@@ -1,6 +1,6 @@
 /*
 ** Configuration header.
-** Copyright (C) 2005-2016 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2020 Mike Pall. See Copyright Notice in luajit.h
 */
 
 // Modified by Yao Wei Tjong for Urho3D
@@ -40,7 +40,7 @@
 #endif
 #define LUA_LROOT	"/usr/local"
 #define LUA_LUADIR	"/lua/5.1/"
-#define LUA_LJDIR	"/luajit-2.1.0-beta2/"
+#define LUA_LJDIR	"/luajit-2.1.0-beta3/"
 
 #ifdef LUA_ROOT
 #define LUA_JROOT	LUA_ROOT
@@ -82,7 +82,7 @@
 #define LUA_IGMARK	"-"
 #define LUA_PATH_CONFIG \
   LUA_DIRSEP "\n" LUA_PATHSEP "\n" LUA_PATH_MARK "\n" \
-  LUA_EXECDIR "\n" LUA_IGMARK
+  LUA_EXECDIR "\n" LUA_IGMARK "\n"
 
 /* Quoting in error messages. */
 #define LUA_QL(x)	"'" x "'"
@@ -95,10 +95,6 @@
 #define LUAI_GCMUL	200	/* Run GC at 200% of allocation speed. */
 #define LUA_MAXCAPTURES	32	/* Max. pattern captures. */
 
-/* Compatibility with older library function names. */
-#define LUA_COMPAT_MOD		/* OLD: math.mod, NEW: math.fmod */
-#define LUA_COMPAT_GFIND	/* OLD: string.gfind, NEW: string.gmatch */
-
 /* Configuration for the frontend (the luajit executable). */
 #if defined(luajit_c)
 #define LUA_PROGNAME	"luajit"  /* Fallback frontend name. */
@@ -109,7 +105,7 @@
 
 /* Note: changing the following defines breaks the Lua 5.1 ABI. */
 #define LUA_INTEGER	ptrdiff_t
-#define LUA_IDSIZE	60	/* Size of lua_Debug.short_src. */
+#define LUA_IDSIZE	128	/* Size of lua_Debug.short_src. */
 /*
 ** Size of lauxlib and io.* on-stack buffers. Weird workaround to avoid using
 ** unreasonable amounts of stack space, but still retain ABI compatibility.
