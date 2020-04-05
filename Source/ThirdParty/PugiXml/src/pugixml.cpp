@@ -4435,6 +4435,9 @@ PUGI__NS_BEGIN
 
 		while (sit && sit != sn)
 		{
+			// loop invariant: dit is inside the subtree rooted at dn
+			assert(dit);
+
 			// when a tree is copied into one of the descendants, we need to skip that subtree to avoid an infinite loop
 			if (sit != dn)
 			{
@@ -4464,9 +4467,14 @@ PUGI__NS_BEGIN
 
 				sit = sit->parent;
 				dit = dit->parent;
+
+				// loop invariant: dit is inside the subtree rooted at dn while sit is inside sn
+				assert(sit == sn || dit);
 			}
 			while (sit != sn);
 		}
+
+		assert(!sit || dit == dn->parent);
 	}
 
 	PUGI__FN void node_copy_attribute(xml_attribute_struct* da, xml_attribute_struct* sa)
@@ -4665,19 +4673,19 @@ PUGI__NS_BEGIN
 	}
 
 	template <typename String, typename Header>
-	PUGI__FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, float value)
+	PUGI__FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, float value, int precision)
 	{
 		char buf[128];
-		PUGI__SNPRINTF(buf, "%.9g", double(value));
+		PUGI__SNPRINTF(buf, "%.*g", precision, double(value));
 
 		return set_value_ascii(dest, header, header_mask, buf);
 	}
 
 	template <typename String, typename Header>
-	PUGI__FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, double value)
+	PUGI__FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, double value, int precision)
 	{
 		char buf[128];
-		PUGI__SNPRINTF(buf, "%.17g", value);
+		PUGI__SNPRINTF(buf, "%.*g", precision, value);
 
 		return set_value_ascii(dest, header, header_mask, buf);
 	}
@@ -5342,14 +5350,28 @@ namespace pugi
 	{
 		if (!_attr) return false;
 
-		return impl::set_value_convert(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs);
+		return impl::set_value_convert(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs, default_double_precision);
+	}
+
+	PUGI__FN bool xml_attribute::set_value(double rhs, int precision)
+	{
+		if (!_attr) return false;
+
+		return impl::set_value_convert(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs, precision);
 	}
 
 	PUGI__FN bool xml_attribute::set_value(float rhs)
 	{
 		if (!_attr) return false;
 
-		return impl::set_value_convert(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs);
+		return impl::set_value_convert(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs, default_float_precision);
+	}
+
+	PUGI__FN bool xml_attribute::set_value(float rhs, int precision)
+	{
+		if (!_attr) return false;
+
+		return impl::set_value_convert(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs, precision);
 	}
 
 	PUGI__FN bool xml_attribute::set_value(bool rhs)
@@ -6059,6 +6081,27 @@ namespace pugi
 		return true;
 	}
 
+	PUGI__FN bool xml_node::remove_attributes()
+	{
+		if (!_root) return false;
+
+		impl::xml_allocator& alloc = impl::get_allocator(_root);
+		if (!alloc.reserve()) return false;
+
+		for (xml_attribute_struct* attr = _root->first_attribute; attr; )
+		{
+			xml_attribute_struct* next = attr->next_attribute;
+
+			impl::destroy_attribute(attr, alloc);
+
+			attr = next;
+		}
+
+		_root->first_attribute = 0;
+
+		return true;
+	}
+
 	PUGI__FN bool xml_node::remove_child(const char_t* name_)
 	{
 		return remove_child(child(name_));
@@ -6073,6 +6116,27 @@ namespace pugi
 
 		impl::remove_node(n._root);
 		impl::destroy_node(n._root, alloc);
+
+		return true;
+	}
+
+	PUGI__FN bool xml_node::remove_children()
+	{
+		if (!_root) return false;
+
+		impl::xml_allocator& alloc = impl::get_allocator(_root);
+		if (!alloc.reserve()) return false;
+
+		for (xml_node_struct* child = _root->first_child; child; )
+		{
+			xml_node_struct* next = child->next_sibling;
+
+			impl::destroy_node(child, alloc);
+
+			child = next;
+		}
+
+		_root->first_child = 0;
 
 		return true;
 	}
@@ -6177,16 +6241,9 @@ namespace pugi
 
 	PUGI__FN xml_node xml_node::first_element_by_path(const char_t* path_, char_t delimiter) const
 	{
-		xml_node found = *this; // Current search context.
+		xml_node context = path_[0] == delimiter ? root() : *this;
 
-		if (!_root || !path_[0]) return found;
-
-		if (path_[0] == delimiter)
-		{
-			// Absolute path; e.g. '/foo/bar'
-			found = found.root();
-			++path_;
-		}
+		if (!context._root) return xml_node();
 
 		const char_t* path_segment = path_;
 
@@ -6196,19 +6253,19 @@ namespace pugi
 
 		while (*path_segment_end && *path_segment_end != delimiter) ++path_segment_end;
 
-		if (path_segment == path_segment_end) return found;
+		if (path_segment == path_segment_end) return context;
 
 		const char_t* next_segment = path_segment_end;
 
 		while (*next_segment == delimiter) ++next_segment;
 
 		if (*path_segment == '.' && path_segment + 1 == path_segment_end)
-			return found.first_element_by_path(next_segment, delimiter);
+			return context.first_element_by_path(next_segment, delimiter);
 		else if (*path_segment == '.' && *(path_segment+1) == '.' && path_segment + 2 == path_segment_end)
-			return found.parent().first_element_by_path(next_segment, delimiter);
+			return context.parent().first_element_by_path(next_segment, delimiter);
 		else
 		{
-			for (xml_node_struct* j = found._root->first_child; j; j = j->next_sibling)
+			for (xml_node_struct* j = context._root->first_child; j; j = j->next_sibling)
 			{
 				if (j->name && impl::strequalrange(j->name, path_segment, static_cast<size_t>(path_segment_end - path_segment)))
 				{
@@ -6503,14 +6560,28 @@ namespace pugi
 	{
 		xml_node_struct* dn = _data_new();
 
-		return dn ? impl::set_value_convert(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs) : false;
+		return dn ? impl::set_value_convert(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs, default_float_precision) : false;
+	}
+
+	PUGI__FN bool xml_text::set(float rhs, int precision)
+	{
+		xml_node_struct* dn = _data_new();
+
+		return dn ? impl::set_value_convert(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs, precision) : false;
 	}
 
 	PUGI__FN bool xml_text::set(double rhs)
 	{
 		xml_node_struct* dn = _data_new();
 
-		return dn ? impl::set_value_convert(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs) : false;
+		return dn ? impl::set_value_convert(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs, default_double_precision) : false;
+	}
+
+	PUGI__FN bool xml_text::set(double rhs, int precision)
+	{
+		xml_node_struct* dn = _data_new();
+
+		return dn ? impl::set_value_convert(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs, precision) : false;
 	}
 
 	PUGI__FN bool xml_text::set(bool rhs)
@@ -6886,8 +6957,7 @@ namespace pugi
 	{
 		reset();
 
-		for (xml_node cur = proto.first_child(); cur; cur = cur.next_sibling())
-			append_copy(cur);
+		impl::node_copy_tree(_root, proto._root);
 	}
 
 	PUGI__FN void xml_document::_create()
@@ -9686,7 +9756,7 @@ PUGI__NS_BEGIN
 			{
 				xpath_context c(*it, i, size);
 
-				if (expr->eval_number(c, stack) == i)
+				if (expr->eval_number(c, stack) == static_cast<double>(i))
 				{
 					*last++ = *it;
 
@@ -9710,11 +9780,11 @@ PUGI__NS_BEGIN
 
 			double er = expr->eval_number(c, stack);
 
-			if (er >= 1.0 && er <= size)
+			if (er >= 1.0 && er <= static_cast<double>(size))
 			{
 				size_t eri = static_cast<size_t>(er);
 
-				if (er == eri)
+				if (er == static_cast<double>(eri))
 				{
 					xpath_node r = last[eri - 1];
 
@@ -10351,35 +10421,38 @@ PUGI__NS_BEGIN
 
 				if (_rettype == xpath_type_boolean)
 					return _data.variable->get_boolean();
+
+				// variable needs to be converted to the correct type, this is handled by the fallthrough block below
+				break;
 			}
 
-			// fallthrough
 			default:
-			{
-				switch (_rettype)
-				{
-				case xpath_type_number:
-					return convert_number_to_boolean(eval_number(c, stack));
-
-				case xpath_type_string:
-				{
-					xpath_allocator_capture cr(stack.result);
-
-					return !eval_string(c, stack).empty();
-				}
-
-				case xpath_type_node_set:
-				{
-					xpath_allocator_capture cr(stack.result);
-
-					return !eval_node_set(c, stack, nodeset_eval_any).empty();
-				}
-
-				default:
-					assert(false && "Wrong expression for return type boolean"); // unreachable
-					return false;
-				}
+				;
 			}
+
+			// none of the ast types that return the value directly matched, we need to perform type conversion
+			switch (_rettype)
+			{
+			case xpath_type_number:
+				return convert_number_to_boolean(eval_number(c, stack));
+
+			case xpath_type_string:
+			{
+				xpath_allocator_capture cr(stack.result);
+
+				return !eval_string(c, stack).empty();
+			}
+
+			case xpath_type_node_set:
+			{
+				xpath_allocator_capture cr(stack.result);
+
+				return !eval_node_set(c, stack, nodeset_eval_any).empty();
+			}
+
+			default:
+				assert(false && "Wrong expression for return type boolean"); // unreachable
+				return false;
 			}
 		}
 
@@ -10486,36 +10559,38 @@ PUGI__NS_BEGIN
 
 				if (_rettype == xpath_type_number)
 					return _data.variable->get_number();
+
+				// variable needs to be converted to the correct type, this is handled by the fallthrough block below
+				break;
 			}
 
-			// fallthrough
 			default:
-			{
-				switch (_rettype)
-				{
-				case xpath_type_boolean:
-					return eval_boolean(c, stack) ? 1 : 0;
-
-				case xpath_type_string:
-				{
-					xpath_allocator_capture cr(stack.result);
-
-					return convert_string_to_number(eval_string(c, stack).c_str());
-				}
-
-				case xpath_type_node_set:
-				{
-					xpath_allocator_capture cr(stack.result);
-
-					return convert_string_to_number(eval_string(c, stack).c_str());
-				}
-
-				default:
-					assert(false && "Wrong expression for return type number"); // unreachable
-					return 0;
-				}
-
+				;
 			}
+
+			// none of the ast types that return the value directly matched, we need to perform type conversion
+			switch (_rettype)
+			{
+			case xpath_type_boolean:
+				return eval_boolean(c, stack) ? 1 : 0;
+
+			case xpath_type_string:
+			{
+				xpath_allocator_capture cr(stack.result);
+
+				return convert_string_to_number(eval_string(c, stack).c_str());
+			}
+
+			case xpath_type_node_set:
+			{
+				xpath_allocator_capture cr(stack.result);
+
+				return convert_string_to_number(eval_string(c, stack).c_str());
+			}
+
+			default:
+				assert(false && "Wrong expression for return type number"); // unreachable
+				return 0;
 			}
 		}
 
@@ -10672,7 +10747,7 @@ PUGI__NS_BEGIN
 				double first = round_nearest(_right->eval_number(c, stack));
 
 				if (is_nan(first)) return xpath_string(); // NaN
-				else if (first >= s_length + 1) return xpath_string();
+				else if (first >= static_cast<double>(s_length + 1)) return xpath_string();
 
 				size_t pos = first < 1 ? 1 : static_cast<size_t>(first);
 				assert(1 <= pos && pos <= s_length + 1);
@@ -10696,12 +10771,12 @@ PUGI__NS_BEGIN
 				double last = first + round_nearest(_right->_next->eval_number(c, stack));
 
 				if (is_nan(first) || is_nan(last)) return xpath_string();
-				else if (first >= s_length + 1) return xpath_string();
+				else if (first >= static_cast<double>(s_length + 1)) return xpath_string();
 				else if (first >= last) return xpath_string();
 				else if (last < 1) return xpath_string();
 
 				size_t pos = first < 1 ? 1 : static_cast<size_t>(first);
-				size_t end = last >= s_length + 1 ? s_length + 1 : static_cast<size_t>(last);
+				size_t end = last >= static_cast<double>(s_length + 1) ? s_length + 1 : static_cast<size_t>(last);
 
 				assert(1 <= pos && pos <= end && end <= s_length + 1);
 				const char_t* rbegin = s.c_str() + (pos - 1);
@@ -10770,34 +10845,37 @@ PUGI__NS_BEGIN
 
 				if (_rettype == xpath_type_string)
 					return xpath_string::from_const(_data.variable->get_string());
+
+				// variable needs to be converted to the correct type, this is handled by the fallthrough block below
+				break;
 			}
 
-			// fallthrough
 			default:
-			{
-				switch (_rettype)
-				{
-				case xpath_type_boolean:
-					return xpath_string::from_const(eval_boolean(c, stack) ? PUGIXML_TEXT("true") : PUGIXML_TEXT("false"));
-
-				case xpath_type_number:
-					return convert_number_to_string(eval_number(c, stack), stack.result);
-
-				case xpath_type_node_set:
-				{
-					xpath_allocator_capture cr(stack.temp);
-
-					xpath_stack swapped_stack = {stack.temp, stack.result};
-
-					xpath_node_set_raw ns = eval_node_set(c, swapped_stack, nodeset_eval_first);
-					return ns.empty() ? xpath_string() : string_value(ns.first(), stack.result);
-				}
-
-				default:
-					assert(false && "Wrong expression for return type string"); // unreachable
-					return xpath_string();
-				}
+				;
 			}
+
+			// none of the ast types that return the value directly matched, we need to perform type conversion
+			switch (_rettype)
+			{
+			case xpath_type_boolean:
+				return xpath_string::from_const(eval_boolean(c, stack) ? PUGIXML_TEXT("true") : PUGIXML_TEXT("false"));
+
+			case xpath_type_number:
+				return convert_number_to_string(eval_number(c, stack), stack.result);
+
+			case xpath_type_node_set:
+			{
+				xpath_allocator_capture cr(stack.temp);
+
+				xpath_stack swapped_stack = {stack.temp, stack.result};
+
+				xpath_node_set_raw ns = eval_node_set(c, swapped_stack, nodeset_eval_first);
+				return ns.empty() ? xpath_string() : string_value(ns.first(), stack.result);
+			}
+
+			default:
+				assert(false && "Wrong expression for return type string"); // unreachable
+				return xpath_string();
 			}
 		}
 
@@ -10919,13 +10997,18 @@ PUGI__NS_BEGIN
 
 					return ns;
 				}
+
+				// variable needs to be converted to the correct type, this is handled by the fallthrough block below
+				break;
 			}
 
-			// fallthrough
 			default:
-				assert(false && "Wrong expression for return type node set"); // unreachable
-				return xpath_node_set_raw();
+				;
 			}
+
+			// none of the ast types that return the value directly matched, but conversions to node set are invalid
+			assert(false && "Wrong expression for return type node set"); // unreachable
+			return xpath_node_set_raw();
 		}
 
 		void optimize(xpath_allocator* alloc)
@@ -12027,11 +12110,6 @@ namespace pugi
 #endif
 
 	PUGI__FN xpath_node::xpath_node()
-	{
-	}
-
-	// Urho3D - copy constructor from another xpath_node
-	PUGI__FN xpath_node::xpath_node(const xpath_node& rhs) : _node(rhs._node), _attribute(rhs._attribute)
 	{
 	}
 

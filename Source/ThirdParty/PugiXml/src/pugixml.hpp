@@ -263,6 +263,9 @@ namespace pugi
 	// Nodes are indented depending on their depth in DOM tree, a default declaration is output if document has none.
 	const unsigned int format_default = format_indent;
 
+	const int default_double_precision = 17;
+	const int default_float_precision = 9;
+
 	// Forward declarations
 	struct xml_attribute_struct;
 	struct xml_node_struct;
@@ -410,7 +413,9 @@ namespace pugi
 		bool set_value(long rhs);
 		bool set_value(unsigned long rhs);
 		bool set_value(double rhs);
+		bool set_value(double rhs, int precision);
 		bool set_value(float rhs);
+		bool set_value(float rhs, int precision);
 		bool set_value(bool rhs);
 
 	#ifdef PUGIXML_HAS_LONG_LONG
@@ -576,9 +581,15 @@ namespace pugi
 		bool remove_attribute(const xml_attribute& a);
 		bool remove_attribute(const char_t* name);
 
+		// Remove all attributes
+		bool remove_attributes();
+
 		// Remove specified child
 		bool remove_child(const xml_node& n);
 		bool remove_child(const char_t* name);
+
+		// Remove all children
+		bool remove_children();
 
 		// Parses buffer as an XML document fragment and appends all nodes as children of the current node.
 		// Copies/converts the buffer, so it may be deleted or changed after the function returns.
@@ -761,7 +772,9 @@ namespace pugi
 		bool set(long rhs);
 		bool set(unsigned long rhs);
 		bool set(double rhs);
+		bool set(double rhs, int precision);
 		bool set(float rhs);
+		bool set(float rhs, int precision);
 		bool set(bool rhs);
 
 	#ifdef PUGIXML_HAS_LONG_LONG
@@ -1297,9 +1310,6 @@ namespace pugi
 	public:
 		// Default constructor; constructs empty XPath node
 		xpath_node();
-		
-		// Urho3D - copy constructor from another xpath_node
-		xpath_node(const xpath_node& rhs);
 
 		// Construct XPath node from XML node/attribute
 		xpath_node(const xml_node& node);
