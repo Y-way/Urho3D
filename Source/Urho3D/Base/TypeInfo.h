@@ -45,7 +45,7 @@ public:
     ~TypeInfo();
 
     /// Check current type is type of specified type.
-    bool IsTypeOf(StringHash type) const;
+    bool IsTypeOf(const StringHash& type) const;
     /// Check current type is type of specified type.
     bool IsTypeOf(const TypeInfo* typeInfo) const;
     /// Check current type is type of specified class type.

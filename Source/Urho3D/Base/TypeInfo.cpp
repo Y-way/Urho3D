@@ -35,7 +35,7 @@ TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
 
 TypeInfo::~TypeInfo() = default;
 
-bool TypeInfo::IsTypeOf(StringHash type) const
+bool TypeInfo::IsTypeOf(const StringHash& type) const
 {
     const TypeInfo* current = this;
     while (current)
