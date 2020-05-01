@@ -59,18 +59,17 @@ struct RefCount
 
 class String;
 class StringHash;
-using ClassID = const void*;
 
 /// Macro to be included in RefCounted derived classes for efficient RTTI
 #define URHO3D_REFCOUNTED(typeName, baseTypeName) \
 public: \
     using ClassName = typeName; \
     using BaseClassName = baseTypeName; \
-    virtual Urho3D::StringHash GetType() const override { return GetTypeInfoStatic()->GetType(); } \
+    virtual const Urho3D::StringHash& GetType() const override { return GetTypeInfoStatic()->GetType(); } \
     virtual const Urho3D::String& GetTypeName() const override { return GetTypeInfoStatic()->GetTypeName(); } \
     virtual const Urho3D::TypeInfo* GetTypeInfo() const override { return GetTypeInfoStatic(); } \
-    virtual Urho3D::StringHash GetBaseType() const { return GetBaseTypeStatic(); } \
-    static Urho3D::StringHash GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
+    virtual const Urho3D::StringHash GetBaseType() const { return GetBaseTypeStatic(); } \
+    static const Urho3D::StringHash& GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
     static const Urho3D::String& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
     static Urho3D::StringHash GetBaseTypeStatic() \
     { \
@@ -98,7 +97,7 @@ public:
     RefCounted& operator =(const RefCounted& rhs) = delete;
 
     /// Return type hash.
-    virtual StringHash GetType() const = 0;
+    virtual const StringHash& GetType() const = 0;
     /// Return type name.
     virtual const String& GetTypeName() const = 0;
     /// Return type info.
@@ -112,14 +111,13 @@ public:
         return &typeInfoStatic;
     }
     /// Check current type is type of specified type.
-    static bool IsTypeOf(const StringHash& type) { return GetTypeInfoStatic()->IsTypeOf(type); }
+    static bool IsTypeOf(StringHash type) { return GetTypeInfoStatic()->IsTypeOf(type); }
     /// Check current type is type of specified type.
     static bool IsTypeOf(const TypeInfo* typeInfo) { return GetTypeInfoStatic()->IsTypeOf(typeInfo); }
-
     /// Check current type is type of specified class.
     template<typename T> static bool IsTypeOf() { return IsTypeOf(T::GetTypeInfoStatic()); }
     /// Check current instance is type of specified type.
-    bool IsInstanceOf(const StringHash& type) const { return GetTypeInfo()->IsTypeOf(type); }
+    bool IsInstanceOf(StringHash type) const { return GetTypeInfo()->IsTypeOf(type); }
     /// Check current instance is type of specified type.
     bool IsInstanceOf(const TypeInfo* typeInfo) const { return GetTypeInfo()->IsTypeOf(typeInfo); }
     /// Check current instance is type of specified class.

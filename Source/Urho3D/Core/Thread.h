@@ -35,6 +35,8 @@ using ThreadID = pthread_t;
 using ThreadID = unsigned;
 #endif
 
+#include <atomic>
+
 namespace Urho3D
 {
 
@@ -71,7 +73,7 @@ protected:
     /// Thread handle.
     void* handle_;
     /// Running flag.
-    volatile bool shouldRun_;
+    std::atomic<bool> shouldRun_;
 
     /// Main thread's thread ID.
     static ThreadID mainThreadID;

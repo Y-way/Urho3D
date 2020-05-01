@@ -228,7 +228,7 @@ protected:
     /// Exit code.
     int exitCode_{};
     /// Completed flag.
-    volatile bool completed_{};
+    std::atomic<bool> completed_{};
 };
 
 /// Async system command operation.

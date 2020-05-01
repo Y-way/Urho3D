@@ -48,7 +48,7 @@ public:
     explicit Object(Context* context);
     /// Destruct. Clean up self from event sender & receiver structures.
     ~Object() override;
-    /// Adjust a Object subobject is object.Always return true
+    /// Adjust a Object subject is object.Always return true.
     virtual bool IsObject() const override { return true; }
     /// Handle event.
     virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
@@ -157,13 +157,13 @@ public:
     Context* GetContext() const { return context_; }
 
     /// Return type info of objects created by this factory.
-    const TypeInfo* GetObjectTypeInfo() const { return objectTypeInfo_; }
+    const TypeInfo* GetFactoryTypeInfo() const { return typeInfo_; }
 
     /// Return type hash of objects created by this factory.
-    StringHash GetObjectType() const { return objectTypeInfo_->GetType(); }
+    const StringHash& GetFactoryType() const { return typeInfo_->GetType(); }
 
     /// Return type name of objects created by this factory.
-    const String& GetObjectTypeName() const { return objectTypeInfo_->GetTypeName(); }
+    const String& GetFactoryTypeName() const { return typeInfo_->GetTypeName(); }
 
 protected:
     /// Execution context.

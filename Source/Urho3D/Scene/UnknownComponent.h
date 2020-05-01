@@ -38,7 +38,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Return type of the stored component.
-    StringHash GetType() const override { return typeHash_; }
+    const StringHash& GetType() const override { return typeHash_; }
 
     /// Return type name of the stored component.
     const String& GetTypeName() const override { return typeName_; }
@@ -62,7 +62,7 @@ public:
     /// Initialize the type name. Called by Node when loading.
     void SetTypeName(const String& typeName);
     /// Initialize the type hash only when type name not known. Called by Node when loading.
-    void SetType(StringHash typeHash);
+    void SetType(const StringHash& typeHash);
 
     /// Return the XML format attributes. Empty when loaded with binary serialization.
     const Vector<String>& GetXMLAttributes() const { return xmlAttributes_; }
