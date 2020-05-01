@@ -347,6 +347,8 @@ template <class T> void RegisterDeserializer(asIScriptEngine* engine, const char
 template <class T> void RegisterRefCounted(asIScriptEngine* engine, const char* className)
 {
     engine->RegisterObjectType(className, 0, asOBJ_REF);
+    engine->RegisterObjectMethod(className, "bool IsInstanceOf(const StringHash&in) const", asMETHODPR(T, IsInstanceOf, (const StringHash&) const, bool), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "bool get_isObject() const", asMETHODPR(T, IsObject, () const, bool), asCALL_THISCALL);
     engine->RegisterObjectBehaviour(className, asBEHAVE_ADDREF, "void f()", asMETHODPR(T, AddRef, (), void), asCALL_THISCALL);
     engine->RegisterObjectBehaviour(className, asBEHAVE_RELEASE, "void f()", asMETHODPR(T, ReleaseRef, (), void), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "int get_refs() const", asMETHODPR(T, Refs, () const, int), asCALL_THISCALL);
@@ -373,7 +375,7 @@ template <class T> bool ObjectHasSubscribedToSenderEvent(Object* sender, const S
 template <class T> void RegisterObject(asIScriptEngine* engine, const char* className)
 {
     RegisterRefCounted<T>(engine, className);
-    engine->RegisterObjectMethod(className, "StringHash get_type() const", asMETHODPR(T, GetType, () const, StringHash), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "const StringHash& get_type() const", asMETHODPR(T, GetType, () const, const StringHash&), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "const String& get_typeName() const", asMETHODPR(T, GetTypeName, () const, const String&), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "const String& get_category() const", asMETHODPR(T, GetCategory, () const, const String&), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void SendEvent(const String&in, VariantMap& eventData = VariantMap())", asFUNCTION(ObjectSendEvent<T>), asCALL_CDECL_OBJLAST);
