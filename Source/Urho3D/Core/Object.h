@@ -25,7 +25,7 @@
 #include "../Container/LinkedList.h"
 #include "../Core/StringHashRegister.h"
 #include "../Core/Variant.h"
-#include "../Container/TypeInfo.h"
+#include "../Base/TypeInfo.h"
 #include "../Container/RefCounted.h"
 #include <functional>
 #include <utility>

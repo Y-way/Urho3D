@@ -28,7 +28,7 @@
 #include <Urho3D/Urho3D.h>
 #endif
 
-#include "../Container/TypeInfo.h"
+#include "../Base/TypeInfo.h"
 
 namespace Urho3D
 {
@@ -71,8 +71,16 @@ public: \
     virtual const Urho3D::StringHash GetBaseType() const { return GetBaseTypeStatic(); } \
     static const Urho3D::StringHash& GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
     static const Urho3D::String& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
-    static const Urho3D::TypeInfo* GetTypeInfoStatic() { static const Urho3D::TypeInfo typeInfoStatic(#typeName, BaseClassName::GetTypeInfoStatic()); return &typeInfoStatic; } \
-    static const Urho3D::StringHash GetBaseTypeStatic() { const Urho3D::TypeInfo* baseInfo = GetTypeInfoStatic()->GetBaseTypeInfo(); return baseInfo ? baseInfo->GetType() : 0; }
+    static Urho3D::StringHash GetBaseTypeStatic() \
+    { \
+        const Urho3D::TypeInfo* baseInfo = GetTypeInfoStatic()->GetBaseTypeInfo(); \
+        return baseInfo ? baseInfo->GetType() : 0; \
+    } \
+    static const Urho3D::TypeInfo* GetTypeInfoStatic() \
+    { \
+        static const Urho3D::TypeInfo typeInfoStatic(#typeName, BaseClassName::GetTypeInfoStatic()); \
+        return &typeInfoStatic; \
+    }
 
 /// Base class for intrusively reference-counted objects. These are noncopyable and non-assignable.
 class URHO3D_API RefCounted
@@ -94,7 +102,6 @@ public:
     virtual const String& GetTypeName() const = 0;
     /// Return type info.
     virtual const TypeInfo* GetTypeInfo() const = 0;
-
     /// Adjust RefCounted subobject is Object. Always return false.
     virtual bool IsObject() const { return false; }
     /// Return type info static.

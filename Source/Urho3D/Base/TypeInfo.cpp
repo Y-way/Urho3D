@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/TypeInfo.h"
+#include "../Base/TypeInfo.h"
 #include "../Container/Str.h"
 
 namespace Urho3D
@@ -57,7 +57,7 @@ bool TypeInfo::IsTypeOf(const TypeInfo* typeInfo) const
     const TypeInfo* current = this;
     while (current)
     {
-        if (current->GetType() == typeInfo->GetType())
+        if (current == typeInfo || current->GetType() == typeInfo->GetType())
             return true;
 
         current = current->GetBaseTypeInfo();
@@ -65,6 +65,5 @@ bool TypeInfo::IsTypeOf(const TypeInfo* typeInfo) const
 
     return false;
 }
-
 
 }
