@@ -33,7 +33,7 @@ namespace Urho3D
 /// Tracking structure for event receivers.
 class URHO3D_API EventReceiverGroup : public RefCounted
 {
-    URHO3D_REFCOUNTED(EventReceiverGroup)
+    URHO3D_REFCOUNTED(EventReceiverGroup, RefCounted)
 
 public:
     /// Construct.
@@ -70,7 +70,7 @@ class URHO3D_API Context : public RefCounted
 {
     friend class Object;
     
-    URHO3D_REFCOUNTED(Context)
+    URHO3D_REFCOUNTED(Context, RefCounted)
 
 public:
     /// Construct.

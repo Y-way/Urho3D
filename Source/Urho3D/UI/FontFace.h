@@ -66,7 +66,7 @@ class URHO3D_API FontFace : public RefCounted
 {
     friend class Font;
     
-    URHO3D_REFCOUNTED(FontFace)
+    URHO3D_REFCOUNTED(FontFace, RefCounted)
 
 public:
     /// Construct.

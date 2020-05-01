@@ -153,7 +153,7 @@ private:
 template <class TClassType, class TGetFunction, class TSetFunction>
 class VariantAttributeAccessorImpl : public AttributeAccessor
 {
-    URHO3D_REFCOUNTED(VariantAttributeAccessorImpl)
+    URHO3D_REFCOUNTED(VariantAttributeAccessorImpl, AttributeAccessor)
 
 public:
     /// Construct.

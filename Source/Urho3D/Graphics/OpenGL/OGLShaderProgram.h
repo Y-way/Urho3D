@@ -37,7 +37,7 @@ class Graphics;
 /// Linked shader program on the GPU.
 class URHO3D_API ShaderProgram : public RefCounted, public GPUObject
 {
-    URHO3D_REFCOUNTED(ShaderProgram)
+    URHO3D_REFCOUNTED(ShaderProgram, RefCounted)
 
 public:
     /// Construct.

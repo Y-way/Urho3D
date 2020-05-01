@@ -245,7 +245,7 @@ void UnknownComponent::SetTypeName(const String& typeName)
     typeHash_ = typeName;
 }
 
-void UnknownComponent::SetType(StringHash typeHash)
+void UnknownComponent::SetType(const StringHash& typeHash)
 {
     typeName_ = GenerateNameFromType(typeHash);
     typeHash_ = typeHash;

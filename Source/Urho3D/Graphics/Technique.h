@@ -44,7 +44,7 @@ enum PassLightingMode
 /// %Material rendering pass, which defines shaders and render state.
 class URHO3D_API Pass : public RefCounted
 {
-    URHO3D_REFCOUNTED(Pass)
+    URHO3D_REFCOUNTED(Pass, RefCounted)
 
 public:
     /// Construct.

@@ -35,7 +35,7 @@ namespace Urho3D
 /// %Sound stream that supports manual buffering of data from the main thread.
 class URHO3D_API BufferedSoundStream : public SoundStream
 {
-    URHO3D_REFCOUNTED(BufferedSoundStream)
+    URHO3D_REFCOUNTED(BufferedSoundStream, SoundStream)
 
 public:
     /// Construct.

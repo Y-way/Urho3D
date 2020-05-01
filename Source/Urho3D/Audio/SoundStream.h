@@ -30,7 +30,7 @@ namespace Urho3D
 /// Base class for sound streams.
 class URHO3D_API SoundStream : public RefCounted
 {
-    URHO3D_REFCOUNTED(SoundStream)
+    URHO3D_REFCOUNTED(SoundStream, RefCounted)
 
 public:
     /// Construct.

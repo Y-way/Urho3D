@@ -31,12 +31,14 @@
 #include "../Math/Matrix3x4.h"
 #include "../Math/Rect.h"
 #include "../Math/StringHash.h"
+#include "../Container/RefCounted.h"
 
 #include <typeinfo>
 
 namespace Urho3D
 {
 
+class RefCounted;
 /// Variant's supported types.
 enum VariantType
 {

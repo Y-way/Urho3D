@@ -45,7 +45,7 @@ struct WorkItem : public RefCounted
 {
     friend class WorkQueue;
 
-    URHO3D_REFCOUNTED(WorkItem)
+    URHO3D_REFCOUNTED(WorkItem, RefCounted)
 
 public:
     /// Work function. Called with the work item and thread index (0 = main thread) as parameters.

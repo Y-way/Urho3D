@@ -57,7 +57,7 @@ public:
     void ApplyAttributes() override;
     /// Process octree raycast. May be called from a worker thread.
     void ProcessRayQuery(const RayOctreeQuery& query, PODVector<RayQueryResult>& results) override;
-    /// Update before octree reinsertion. Is called from a worker thread.
+    /// Update before octree reinsertion. Is called from a worker thread..
     void Update(const FrameInfo& frame) override;
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
     void UpdateBatches(const FrameInfo& frame) override;

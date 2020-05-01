@@ -38,7 +38,7 @@ class URHO3D_API RenderSurface : public RefCounted
     friend class Texture2DArray;
     friend class TextureCube;
 
-    URHO3D_REFCOUNTED(RenderSurface)
+    URHO3D_REFCOUNTED(RenderSurface, RefCounted)
 
 public:
     /// Construct with parent texture.

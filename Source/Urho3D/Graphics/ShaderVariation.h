@@ -80,7 +80,7 @@ struct ShaderParameter
 /// Vertex or pixel shader on the GPU.
 class URHO3D_API ShaderVariation : public RefCounted, public GPUObject
 {
-    URHO3D_REFCOUNTED(ShaderVariation)
+    URHO3D_REFCOUNTED(ShaderVariation, RefCounted)
 
 public:
     /// Construct.

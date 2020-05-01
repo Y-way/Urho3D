@@ -38,7 +38,7 @@ class XMLFile;
 /// Tmx layer.
 class TmxLayer2D : public RefCounted
 {
-    URHO3D_REFCOUNTED(TmxLayer2D)
+    URHO3D_REFCOUNTED(TmxLayer2D, RefCounted)
 
 public:
     TmxLayer2D(TmxFile2D* tmxFile, TileMapLayerType2D type);
@@ -93,7 +93,7 @@ protected:
 /// Tmx tile layer.
 class TmxTileLayer2D : public TmxLayer2D
 {
-    URHO3D_REFCOUNTED(TmxTileLayer2D)
+    URHO3D_REFCOUNTED(TmxTileLayer2D, RefCounted)
 
 public:
     explicit TmxTileLayer2D(TmxFile2D* tmxFile);
@@ -111,7 +111,7 @@ protected:
 /// Tmx objects layer.
 class TmxObjectGroup2D : public TmxLayer2D
 {
-    URHO3D_REFCOUNTED(TmxObjectGroup2D)
+    URHO3D_REFCOUNTED(TmxObjectGroup2D, TmxLayer2D)
 
 public:
     explicit TmxObjectGroup2D(TmxFile2D* tmxFile);
@@ -136,7 +136,7 @@ private:
 /// Tmx image layer.
 class TmxImageLayer2D : public TmxLayer2D
 {
-    URHO3D_REFCOUNTED(TmxImageLayer2D)
+    URHO3D_REFCOUNTED(TmxImageLayer2D, TmxLayer2D)
     
 public:
     explicit TmxImageLayer2D(TmxFile2D* tmxFile);

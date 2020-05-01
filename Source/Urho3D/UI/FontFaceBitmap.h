@@ -34,7 +34,7 @@ class Serializer;
 /// Bitmap font face description.
 class URHO3D_API FontFaceBitmap : public FontFace
 {
-    URHO3D_REFCOUNTED(FontFaceBitmap)
+    URHO3D_REFCOUNTED(FontFaceBitmap, FontFace)
 
 public:
     /// Construct.

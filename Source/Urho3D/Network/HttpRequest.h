@@ -45,7 +45,7 @@ enum HttpRequestState
 /// An HTTP connection with response data stream.
 class URHO3D_API HttpRequest : public RefCounted, public Deserializer, public Thread
 {
-    URHO3D_REFCOUNTED(HttpRequest)
+    URHO3D_REFCOUNTED(HttpRequest, RefCounted)
 
 public:
     /// Construct with parameters.

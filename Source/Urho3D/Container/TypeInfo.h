@@ -21,37 +21,43 @@
 //
 
 #pragma once
-
-#include "../../Container/HashMap.h"
-#include "../../Graphics/ShaderVariation.h"
-#include "../../Container/RefCounted.h"
+#include "../Math/StringHash.h"
 
 namespace Urho3D
 {
 
-/// Combined information for specific vertex and pixel shaders.
-class ShaderProgram : public RefCounted
+class StringHash;
+class String;
+/// Type info.
+class URHO3D_API TypeInfo
 {
-    URHO3D_REFCOUNTED(ShaderProgram, RefCounted)
-
 public:
     /// Construct.
-    ShaderProgram(ShaderVariation* vertexShader, ShaderVariation* pixelShader)
-    {
-        const HashMap<StringHash, ShaderParameter>& vsParams = vertexShader->GetParameters();
-        for (HashMap<StringHash, ShaderParameter>::ConstIterator i = vsParams.Begin(); i != vsParams.End(); ++i)
-            parameters_[i->first_] = i->second_;
+    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
+    /// Destruct.
+    ~TypeInfo();
 
-        const HashMap<StringHash, ShaderParameter>& psParams = pixelShader->GetParameters();
-        for (HashMap<StringHash, ShaderParameter>::ConstIterator i = psParams.Begin(); i != psParams.End(); ++i)
-            parameters_[i->first_] = i->second_;
+    /// Check current type is type of specified type.
+    bool IsTypeOf(const StringHash& type) const;
+    /// Check current type is type of specified type.
+    bool IsTypeOf(const TypeInfo* typeInfo) const;
+    /// Check current type is type of specified class type.
+    template<typename T> bool IsTypeOf() const { return IsTypeOf(T::GetTypeInfoStatic()); }
 
-        // Optimize shader parameter lookup by rehashing to next power of two
-        parameters_.Rehash(NextPowerOfTwo(parameters_.Size()));
-    }
+    /// Return type.
+    const StringHash& GetType() const { return type_; }
+    /// Return type name.
+    const String& GetTypeName() const { return typeName_;}
+    /// Return base type info.
+    const TypeInfo* GetBaseTypeInfo() const { return baseTypeInfo_; }
 
-    /// Combined parameters from the vertex and pixel shader.
-    HashMap<StringHash, ShaderParameter> parameters_;
+private:
+    /// Type.
+    const StringHash type_;
+    /// Type name.
+    const String typeName_;
+    /// Base class type info.
+    const TypeInfo* baseTypeInfo_;
 };
 
 }

@@ -52,7 +52,7 @@ struct VertexDeclarationElement
 /// Vertex declaration.
 class URHO3D_API VertexDeclaration : public RefCounted
 {
-    URHO3D_REFCOUNTED(VertexDeclaration)
+    URHO3D_REFCOUNTED(VertexDeclaration, RefCounted)
 
 public:
     /// Construct with a single buffer's vertex element list.

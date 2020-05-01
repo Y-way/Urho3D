@@ -76,7 +76,7 @@ struct TechniqueEntry
 /// Material's shader parameter animation instance.
 class ShaderParameterAnimationInfo : public ValueAnimationInfo
 {
-    URHO3D_REFCOUNTED(ShaderParameterAnimationInfo)
+    URHO3D_REFCOUNTED(ShaderParameterAnimationInfo, RefCounted)
 
 public:
     /// Construct.
