@@ -28,8 +28,18 @@
 #include <Urho3D/Urho3D.h>
 #endif
 
+#include "../Container/Str.h"
+#include "../Math/StringHash.h"
+
 namespace Urho3D
 {
+/// Macro to be included in RefCounted derived classes for efficient RTTI
+#define URHO3D_REFCOUNTED(typeName) \
+    public: \
+        virtual Urho3D::StringHash GetType() const override { return GetTypeStatic(); } \
+        static Urho3D::StringHash GetTypeStatic() {static const Urho3D::StringHash _type(#typeName); return _type; } \
+        virtual const Urho3D::String& GetTypeName() const override { return GetTypeNameStatic(); } \
+        static const Urho3D::String& GetTypeNameStatic() { static const Urho3D::String _typeName(#typeName); return _typeName; }
 
 /// Reference count structure.
 struct RefCount
@@ -69,6 +79,12 @@ public:
     /// Prevent assignment.
     RefCounted& operator =(const RefCounted& rhs) = delete;
 
+    /// Adjust RefCounted subobject is Object. Always return false.
+    virtual bool IsObject() const { return false; }
+    /// Get type name as Object
+    virtual const String& GetTypeName() const = 0;
+    /// Get type hashcode as Object
+    virtual StringHash GetType() const = 0;
     /// Increment reference count. Can also be called outside of a SharedPtr for traditional reference counting.
     void AddRef();
     /// Decrement reference count and delete self if no more references. Can also be called outside of a SharedPtr for traditional reference counting.

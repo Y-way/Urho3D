@@ -87,6 +87,17 @@ static void RegisterSpriteSheet2D(asIScriptEngine* engine)
     engine->RegisterObjectMethod("SpriteSheet2D", "void DefineSprite(const String&, const IntRect&, const Vector2& hotSpot=Vector2(0.5f, 0.5f), const IntVector2& offset = IntVector2::ZERO)", asMETHOD(SpriteSheet2D, DefineSprite), asCALL_THISCALL);
 }
 
+// Template function for registering a class derived from Drawable2D.
+template <class T> void RegisterDrawable2D(asIScriptEngine* engine, const char* className)
+{
+    RegisterDrawable<T>(engine, className);
+    RegisterSubclass<Drawable2D, T>(engine, "Drawable2D", className);
+    engine->RegisterObjectMethod(className, "void set_layer(int)", asMETHOD(T, SetLayer), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "int get_layer() const", asMETHOD(T, GetLayer), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "void set_orderInLayer(int)", asMETHOD(T, SetOrderInLayer), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "int get_orderInLayer() const", asMETHOD(T, GetOrderInLayer), asCALL_THISCALL);
+}
+
 static void RegisterDrawable2D(asIScriptEngine* engine)
 {
     engine->RegisterGlobalProperty("const float PIXEL_SIZE", (void*)&PIXEL_SIZE);
@@ -264,7 +275,7 @@ static void RegisterTileMapDefs2D(asIScriptEngine* engine)
     RegisterRefCounted<TileMapObject2D>(engine, "TileMapObject2D");
     engine->RegisterObjectMethod("TileMapObject2D", "TileObjectType2D get_objectType() const", asMETHOD(TileMapObject2D, GetObjectType), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "const String& get_name() const", asMETHOD(TileMapObject2D, GetName), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TileMapObject2D", "const String& get_type() const", asMETHOD(TileMapObject2D, GetType), asCALL_THISCALL);
+    engine->RegisterObjectMethod("TileMapObject2D", "const String& get_type() const", asMETHOD(TileMapObject2D, GetMapObjectType), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "const Vector2& get_position() const", asMETHOD(TileMapObject2D, GetPosition), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "const Vector2& get_size() const", asMETHOD(TileMapObject2D, GetSize), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "uint get_numPoints() const", asMETHOD(TileMapObject2D, GetNumPoints), asCALL_THISCALL);
