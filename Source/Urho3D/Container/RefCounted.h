@@ -74,7 +74,7 @@ public: \
     static Urho3D::StringHash GetBaseTypeStatic() \
     { \
         const Urho3D::TypeInfo* baseInfo = GetTypeInfoStatic()->GetBaseTypeInfo(); \
-        return baseInfo ? baseInfo->GetType() : StringHash::ZERO; \
+        return baseInfo ? baseInfo->GetType() : Urho3D::StringHash::ZERO; \
     } \
     static const Urho3D::TypeInfo* GetTypeInfoStatic() \
     { \
@@ -111,13 +111,13 @@ public:
         return &typeInfoStatic;
     }
     /// Check current type is type of specified type.
-    static bool IsTypeOf(StringHash type) { return GetTypeInfoStatic()->IsTypeOf(type); }
+    static bool IsTypeOf(const StringHash& type) { return GetTypeInfoStatic()->IsTypeOf(type); }
     /// Check current type is type of specified type.
     static bool IsTypeOf(const TypeInfo* typeInfo) { return GetTypeInfoStatic()->IsTypeOf(typeInfo); }
     /// Check current type is type of specified class.
     template<typename T> static bool IsTypeOf() { return IsTypeOf(T::GetTypeInfoStatic()); }
     /// Check current instance is type of specified type.
-    bool IsInstanceOf(StringHash type) const { return GetTypeInfo()->IsTypeOf(type); }
+    bool IsInstanceOf(const StringHash& type) const { return GetTypeInfo()->IsTypeOf(type); }
     /// Check current instance is type of specified type.
     bool IsInstanceOf(const TypeInfo* typeInfo) const { return GetTypeInfo()->IsTypeOf(typeInfo); }
     /// Check current instance is type of specified class.

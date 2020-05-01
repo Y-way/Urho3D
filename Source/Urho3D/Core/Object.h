@@ -48,8 +48,8 @@ public:
     explicit Object(Context* context);
     /// Destruct. Clean up self from event sender & receiver structures.
     ~Object() override;
-    /// Adjust a Object subject is object.Always return true.
-    virtual bool IsObject() const override { return true; }
+    /// Adjust a Object subobject is object.Always return true.
+    virtual bool IsObject() const override final { return true; }
     /// Handle event.
     virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
     /// Subscribe to an event that can be sent by any sender.
@@ -157,19 +157,19 @@ public:
     Context* GetContext() const { return context_; }
 
     /// Return type info of objects created by this factory.
-    const TypeInfo* GetFactoryTypeInfo() const { return typeInfo_; }
+    const TypeInfo* GetProductTypeInfo() const { return productTypeInfo_; }
 
     /// Return type hash of objects created by this factory.
-    const StringHash& GetFactoryType() const { return typeInfo_->GetType(); }
+    const StringHash& GetProductType() const { return productTypeInfo_->GetType(); }
 
     /// Return type name of objects created by this factory.
-    const String& GetFactoryTypeName() const { return typeInfo_->GetTypeName(); }
+    const String& GetProductTypeName() const { return productTypeInfo_->GetTypeName(); }
 
 protected:
     /// Execution context.
     Context* context_;
     /// Type info.
-    const TypeInfo* objectTypeInfo_{};
+    const TypeInfo* productTypeInfo_{};
 };
 
 /// Template implementation of the object factory.
@@ -182,7 +182,7 @@ public:
     explicit ObjectFactoryImpl(Context* context) :
         ObjectFactory(context)
     {
-        objectTypeInfo_ = T::GetTypeInfoStatic();
+        productTypeInfo_ = T::GetTypeInfoStatic();
     }
 
     /// Create an object of the specific type.
