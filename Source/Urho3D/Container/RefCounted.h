@@ -82,7 +82,7 @@ public: \
         return &typeInfoStatic; \
     }
 
-/// Base class for intrusively reference-counted objects. These are noncopyable and non-assignable.
+/// Base class for intrusively reference-counted objects. These are non-copyable and non-assignable.
 class URHO3D_API RefCounted
 {
 public:
@@ -102,10 +102,14 @@ public:
     virtual const String& GetTypeName() const = 0;
     /// Return type info.
     virtual const TypeInfo* GetTypeInfo() const = 0;
-    /// Adjust RefCounted subobject is Object. Always return false.
+    /// Adjust RefCounted subject is Object. Always return false.
     virtual bool IsObject() const { return false; }
     /// Return type info static.
-    static const TypeInfo* GetTypeInfoStatic() { return nullptr; }
+    static const TypeInfo* GetTypeInfoStatic()
+    {
+        static const Urho3D::TypeInfo typeInfoStatic("RefCounted", nullptr);
+        return &typeInfoStatic;
+    }
     /// Check current type is type of specified type.
     static bool IsTypeOf(StringHash type) { return GetTypeInfoStatic()->IsTypeOf(type); }
     /// Check current type is type of specified type.
