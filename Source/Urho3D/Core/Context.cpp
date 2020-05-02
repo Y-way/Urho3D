@@ -175,7 +175,7 @@ void Context::RegisterFactory(ObjectFactory* factory, const char* category)
 
     RegisterFactory(factory);
     if (String::CStringLength(category))
-        objectCategories_[category].Push(factory->GetObjectType());
+        objectCategories_[category].Push(factory->GetProductType());
 }
 
 void Context::RegisterSubsystem(Object* object)
