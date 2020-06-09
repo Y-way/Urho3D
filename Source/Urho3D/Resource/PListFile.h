@@ -105,7 +105,7 @@ public:
     /// Return string.
     const String& GetString() const;
     /// Return IntRect, for string type.
-    IntRect GetIntRect() const;
+    IntRect GetIntRect(bool rotate = false) const;
     /// Return IntVector2, for string type.
     IntVector2 GetIntVector2() const;
     /// Return IntVector3, for string type.

@@ -209,13 +209,16 @@ const String& PListValue::GetString() const
     return type_ == PLVT_STRING ? *string_ : String::EMPTY;
 }
 
-IntRect PListValue::GetIntRect() const
+IntRect PListValue::GetIntRect(bool rotate/* = false*/) const
 {
     if (type_ != PLVT_STRING)
         return IntRect::ZERO;
 
     int x, y, w, h;
-    sscanf(string_->CString(), "{{%d,%d},{%d,%d}}", &x, &y, &w, &h);    // NOLINT(cert-err34-c)
+    if (rotate)
+        sscanf(string_->CString(), "{{%d,%d},{%d,%d}}", &x, &y, &h, &w);    // NOLINT(cert-err34-c)
+    else
+        sscanf(string_->CString(), "{{%d,%d},{%d,%d}}", &x, &y, &w, &h);    // NOLINT(cert-err34-c)
     return {x, y, x + w, y + h};
 }
 

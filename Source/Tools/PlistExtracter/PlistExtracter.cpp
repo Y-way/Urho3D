@@ -86,15 +86,21 @@ bool ParserPListFile(SharedPtr<PListFile> plist, HashMap<String, FrameInfo>& out
         String name = i->first_;
 
         const PListValueMap& frameInfo = i->second_.GetValueMap();
-        if (frameInfo["rotated"]->GetBool())
+        
+        bool ratate = frameInfo["rotated"]->GetBool();
+        IntRect rectangle = frameInfo["frame"]->GetIntRect(ratate);
+        if (ratate)
         {
-            URHO3D_LOGWARNING("Rotated sprite is not support now");
-            continue;
+            URHO3D_LOGERROR(name + " is ratated!");
         }
 
-        IntRect rectangle = frameInfo["frame"]->GetIntRect();
         Vector2 hotSpot(0.5f, 0.5f);
         IntVector2 offset(0, 0);
+        PListValueMap::ConstIterator it = frameInfo.Find("offset");
+        if (it != frameInfo.End())
+        {
+            offset = it->second_.GetIntVector2();
+        }
 
         IntRect sourceColorRect = frameInfo["sourceColorRect"]->GetIntRect();
         if (sourceColorRect.left_ != 0 && sourceColorRect.top_ != 0)
@@ -216,6 +222,10 @@ void Run(Vector<String>& arguments)
 
     for (auto& var : sprites)
     {
-        image->GetSubimage(var.second_.rect)->SavePNG(outDir + var.first_);
+        SharedPtr<Image> subImage(image->GetSubimage(var.second_.rect));
+        if (subImage)
+        {
+            subImage->SavePNG(outDir + var.first_);
+        }
     }
 }
