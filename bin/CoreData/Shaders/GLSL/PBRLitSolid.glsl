@@ -41,7 +41,7 @@ varying vec4 vWorldPos;
     #ifdef ENVCUBEMAP
         varying vec3 vReflectionVec;
     #endif
-    #if defined(LIGHTMAP) || defined(AO)
+    #if defined(LIGHTMAP)
         varying vec2 vTexCoord2;
     #endif
 #endif
@@ -87,11 +87,13 @@ void main()
         #endif
     #else
         // Ambient & per-vertex lighting
-        #if defined(LIGHTMAP) || defined(AO)
+        #if defined(LIGHTMAP)
             // If using lightmap, disregard zone ambient light
-            // If using AO, calculate ambient in the PS
             vVertexLight = vec3(0.0, 0.0, 0.0);
             vTexCoord2 = iTexCoord1;
+        #elif defined(AO)
+            // If using AO, calculate ambient in the PS
+            vVertexLight = vec3(0.0, 0.0, 0.0);
         #else
             vVertexLight = GetAmbient(GetZonePos(worldPos));
         #endif
@@ -221,9 +223,11 @@ void main()
     #else
         // Ambient & per-vertex lighting
         vec3 finalColor = vVertexLight * diffColor.rgb;
+        vec3 ambientOcclusion = vec3(1.0, 1.0, 1.0);
         #ifdef AO
             // If using AO, the vertex light ambient is black, calculate occluded ambient here
-            finalColor += texture2D(sEmissiveMap, vTexCoord2).rgb * cAmbientColor.rgb * diffColor.rgb;
+            ambientOcclusion = texture2D(sEmissiveMap, vTexCoord.xy).rgb;
+            finalColor += ambientOcclusion * cAmbientColor.rgb * diffColor.rgb;
         #endif
 
         #ifdef MATERIAL
@@ -241,9 +245,8 @@ void main()
         vec3 cubeColor = vVertexLight.rgb;
 
         #ifdef IBL
-          vec3 iblColor = ImageBasedLighting(reflection, tangent, bitangent, normal, toCamera, diffColor.rgb, specColor.rgb, roughness, cubeColor);
-          float gamma = 0.0;
-          finalColor.rgb += iblColor;
+          vec3 iblColor = ImageBasedLighting(reflection, normal, toCamera, diffColor.rgb, specColor.rgb, roughness, cubeColor);
+          finalColor.rgb += iblColor * ambientOcclusion;
         #endif
 
         #ifdef ENVCUBEMAP
