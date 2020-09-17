@@ -35,9 +35,7 @@ namespace Urho3D
 
 class Context;
 class EventHandler;
-
 #define URHO3D_OBJECT(typeName, baseTypeName) URHO3D_REFCOUNTED(typeName, baseTypeName)
-
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
 class URHO3D_API Object : public RefCounted
 {
