@@ -65,6 +65,49 @@ class ScriptResourceRouter : public ResourceRouter
     }
 };
 
+void ASRegisterManualFirst(asIScriptEngine* engine);
+void ASRegisterGeneratedEnums(asIScriptEngine* engine);
+void ASRegisterGeneratedObjectTypes(asIScriptEngine* engine);
+void ASRegisterGeneratedDefaultConstructors(asIScriptEngine* engine);
+void ASRegisterGeneratedClasses(asIScriptEngine* engine);
+
+void ASRegisterGenerated_Members_A(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_B(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Ca_Cm(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Cn_Cz(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Constraint(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_D(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_E(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_F(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_G(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_H(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_I(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_J(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_K(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_L(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_M(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_N(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_O(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_P(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Q(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_R(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Sa_Sm(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Sn_Sz(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Ta_Tm(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Tn_Tz(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_U(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_V(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_W(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_X(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Y(asIScriptEngine* engine);
+void ASRegisterGenerated_Members_Z(asIScriptEngine* engine);
+
+void ASRegisterGenerated_Members_Other(asIScriptEngine* engine);
+
+void ASRegisterGeneratedGlobalVariables(asIScriptEngine* engine);
+void ASRegisterGeneratedGlobalFunctions(asIScriptEngine* engine);
+
+void ASRegisterManualLast(asIScriptEngine* engine);
 
 Script::Script(Context* context) :
     Object(context),
@@ -85,6 +128,7 @@ Script::Script(Context* context) :
     scriptEngine_->SetEngineProperty(asEP_ALLOW_UNSAFE_REFERENCES, (asPWORD)true);
     scriptEngine_->SetEngineProperty(asEP_ALLOW_IMPLICIT_HANDLE_TYPES, (asPWORD)true);
     scriptEngine_->SetEngineProperty(asEP_BUILD_WITHOUT_LINE_CUES, (asPWORD)true);
+    scriptEngine_->SetEngineProperty(asEP_PROPERTY_ACCESSOR_MODE, 1);
 // Use the copy of the original asMETHOD macro in a web build (for some reason it still works, presumably because the signature of the function is known)
 #ifdef AS_MAX_PORTABILITY
     scriptEngine_->SetMessageCallback(_asMETHOD(Script, MessageCallback), this, asCALL_THISCALL);
@@ -105,41 +149,57 @@ Script::Script(Context* context) :
     RegisterScriptLibrary(context_);
 
     // Register the Array, String & Dictionary API
-    RegisterArray(scriptEngine_);
-    RegisterString(scriptEngine_);
-    RegisterDictionary(scriptEngine_);
     RegisterScriptInterfaceAPI(scriptEngine_);
 
+    ASRegisterManualFirst(scriptEngine_);
+    ASRegisterGeneratedEnums(scriptEngine_);
+    ASRegisterGeneratedObjectTypes(scriptEngine_);
+    ASRegisterGeneratedDefaultConstructors(scriptEngine_);
+    ASRegisterGeneratedClasses(scriptEngine_);
+
+    ASRegisterGenerated_Members_A(scriptEngine_);
+    ASRegisterGenerated_Members_B(scriptEngine_);
+    ASRegisterGenerated_Members_Ca_Cm(scriptEngine_);
+    ASRegisterGenerated_Members_Cn_Cz(scriptEngine_);
+    ASRegisterGenerated_Members_Constraint(scriptEngine_);
+    ASRegisterGenerated_Members_D(scriptEngine_);
+    ASRegisterGenerated_Members_E(scriptEngine_);
+    ASRegisterGenerated_Members_F(scriptEngine_);
+    ASRegisterGenerated_Members_G(scriptEngine_);
+    ASRegisterGenerated_Members_H(scriptEngine_);
+    ASRegisterGenerated_Members_I(scriptEngine_);
+    ASRegisterGenerated_Members_J(scriptEngine_);
+    ASRegisterGenerated_Members_K(scriptEngine_);
+    ASRegisterGenerated_Members_L(scriptEngine_);
+    ASRegisterGenerated_Members_M(scriptEngine_);
+    ASRegisterGenerated_Members_N(scriptEngine_);
+    ASRegisterGenerated_Members_O(scriptEngine_);
+    ASRegisterGenerated_Members_P(scriptEngine_);
+    ASRegisterGenerated_Members_Q(scriptEngine_);
+    ASRegisterGenerated_Members_R(scriptEngine_);
+    ASRegisterGenerated_Members_Sa_Sm(scriptEngine_);
+    ASRegisterGenerated_Members_Sn_Sz(scriptEngine_);
+    ASRegisterGenerated_Members_Ta_Tm(scriptEngine_);
+    ASRegisterGenerated_Members_Tn_Tz(scriptEngine_);
+    ASRegisterGenerated_Members_U(scriptEngine_);
+    ASRegisterGenerated_Members_V(scriptEngine_);
+    ASRegisterGenerated_Members_W(scriptEngine_);
+    ASRegisterGenerated_Members_X(scriptEngine_);
+    ASRegisterGenerated_Members_Y(scriptEngine_);
+    ASRegisterGenerated_Members_Z(scriptEngine_);
+
+    ASRegisterGenerated_Members_Other(scriptEngine_);
+
+    ASRegisterGeneratedGlobalVariables(scriptEngine_);
+    ASRegisterGeneratedGlobalFunctions(scriptEngine_);
+
+    ASRegisterManualLast(scriptEngine_);
+
     // Register the rest of the script API
-    RegisterMathAPI(scriptEngine_);
     RegisterCoreAPI(scriptEngine_);
-    RegisterIOAPI(scriptEngine_);
-    RegisterResourceAPI(scriptEngine_);
     RegisterSceneAPI(scriptEngine_);
-    RegisterGraphicsAPI(scriptEngine_);
-    RegisterInputAPI(scriptEngine_);
-    RegisterAudioAPI(scriptEngine_);
-    RegisterUIAPI(scriptEngine_);
-#ifdef URHO3D_NETWORK
-    RegisterNetworkAPI(scriptEngine_);
-#endif
-#ifdef URHO3D_DATABASE
-    RegisterDatabaseAPI(scriptEngine_);
-#endif
-#ifdef URHO3D_IK
-    RegisterIKAPI(scriptEngine_);
-#endif
-#ifdef URHO3D_PHYSICS
-    RegisterPhysicsAPI(scriptEngine_);
-#endif
-#ifdef URHO3D_NAVIGATION
-    RegisterNavigationAPI(scriptEngine_);
-#endif
-#ifdef URHO3D_URHO2D
-    RegisterUrho2DAPI(scriptEngine_);
-#endif
+
     RegisterScriptAPI(scriptEngine_);
-    RegisterEngineAPI(scriptEngine_);
 
     // Subscribe to console commands
     SetExecuteConsoleCommands(true);

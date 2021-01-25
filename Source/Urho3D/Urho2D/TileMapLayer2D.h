@@ -59,8 +59,10 @@ public:
     /// Initialize with tile map and tmx layer.
     void Initialize(TileMap2D* tileMap, const TmxLayer2D* tmxLayer);
     /// Set draw order.
+    /// @property
     void SetDrawOrder(int drawOrder);
     /// Set visible.
+    /// @property
     void SetVisible(bool visible);
     /// For tile layers, update animated tile sprites.
     void UpdateAnimations();
@@ -72,9 +74,11 @@ public:
     const TmxLayer2D* GetTmxLayer() const { return tmxLayer_; }
 
     /// Return draw order.
+    /// @property
     int GetDrawOrder() const { return drawOrder_; }
 
     /// Return visible.
+    /// @property
     bool IsVisible() const { return visible_; }
 
     /// Return has property.
@@ -82,11 +86,14 @@ public:
     /// Return property.
     const String& GetProperty(const String& name) const;
     /// Return layer type.
+    /// @property
     TileMapLayerType2D GetLayerType() const;
 
     /// Return width (for tile layer only).
+    /// @property
     int GetWidth() const;
     /// Return height (for tile layer only).
+    /// @property
     int GetHeight() const;
     /// Return tile node (for tile layer only).
     Node* GetTileNode(int x, int y) const;
@@ -94,6 +101,7 @@ public:
     Tile2D* GetTile(int x, int y) const;
 
     /// Return number of tile map objects (for object group only).
+    /// @property
     unsigned GetNumObjects() const;
     /// Return tile map object (for object group only).
     TileMapObject2D* GetObject(unsigned index) const;
@@ -101,6 +109,7 @@ public:
     Node* GetObjectNode(unsigned index) const;
 
     /// Return image node (for image layer only).
+    /// @property
     Node* GetImageNode() const;
 
 private:

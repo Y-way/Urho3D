@@ -79,7 +79,7 @@ void main()
             gl_FragColor = cShadowColor;
         #ifndef SUPERSAMPLING
         else if (distance <= 0.5)
-            gl_FragColor.a = 0;
+            gl_FragColor.a = 0.0;
         #endif
         else
     #endif

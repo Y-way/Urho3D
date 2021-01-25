@@ -8,11 +8,11 @@ varying vec3 vTexCoord;
 void main()
 {
 #ifdef IGNORENODETRANSFORM
-    mat4 modelMatrix = transpose(mat4(
-        vec4(1.0, 0.0, 0.0, 0.0),
-        vec4(0.0, 1.0, 0.0, 0.0),
-        vec4(0.0, 0.0, 1.0, 0.0),
-        transpose(cViewInv)[3]));
+    mat4 modelMatrix = mat4(
+        vec4(1.0, 0.0, 0.0, cViewInv[0].w),
+        vec4(0.0, 1.0, 0.0, cViewInv[1].w),
+        vec4(0.0, 0.0, 1.0, cViewInv[2].w),
+        vec4(0.0, 0.0, 0.0, 1.0));
 #else
     mat4 modelMatrix = iModelMatrix;
 #endif
