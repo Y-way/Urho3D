@@ -163,6 +163,10 @@ string JoinParamsNames(xml_node memberdef, bool skipContext = false);
 
 // <memberdef kind="function">
 //     ...
+string GetFunctionDeclaration(xml_node memberdef);
+
+// <memberdef kind="function">
+//     ...
 string GetFunctionLocation(xml_node memberdef);
 
 // <compounddef|memberdef id="...">
@@ -246,7 +250,7 @@ public:
     string GetLocation() const;
 };
 
-class ClassFunctionAnalyzer;
+class MethodAnalyzer;
 class ClassVariableAnalyzer;
 
 // <compounddef kind="class|struct">...</compounddef>
@@ -271,13 +275,14 @@ public:
     string GetKind() const { return ExtractKind(compounddef_); }
     bool IsInternal() const;
     bool IsTemplate() const { return ::IsTemplate(compounddef_); }
-    vector<ClassFunctionAnalyzer> GetFunctions() const;
+    vector<MethodAnalyzer> GetAllMethods() const;
+    vector<MethodAnalyzer> GetThisPublicMethods() const;
     vector<ClassVariableAnalyzer> GetVariables() const;
-    bool ContainsFunction(const string& name) const;
-    shared_ptr<ClassFunctionAnalyzer> GetFunction(const string& name) const;
-    int NumFunctions(const string& name) const;
+    bool ContainsMethod(const string& name) const;
+    shared_ptr<MethodAnalyzer> GetMethod(const string& name) const;
+    int NumMethods(const string& name) const;
     bool IsRefCounted() const;
-    bool HasThisDestructor() const { return ContainsFunction("~" + GetClassName()); }
+    bool HasThisDestructor() const { return ContainsMethod("~" + GetClassName()); }
     bool HasThisConstructor() const;
     bool IsAbstract() const;
     string GetLocation() const { return GetKind() + " " + GetClassName() + " | File: " + GetHeaderFile(); }
@@ -290,13 +295,13 @@ public:
     
     // Return null if default constructor is implicitly-declared.
     // Return pointer if default constructor is deleted
-    shared_ptr<ClassFunctionAnalyzer> GetDefinedThisDefaultConstructor() const;
+    shared_ptr<MethodAnalyzer> GetDefinedThisDefaultConstructor() const;
 
-    vector<ClassFunctionAnalyzer> GetThisNonDefaultConstructors() const;
+    vector<MethodAnalyzer> GetThisNonDefaultConstructors() const;
 
     // Return null if destructor is implicitly-declared.
     // Return pointer if destructor is deleted
-    shared_ptr<ClassFunctionAnalyzer> GetDefinedThisDestructor() const { return GetFunction("~" + GetClassName()); }
+    shared_ptr<MethodAnalyzer> GetDefinedThisDestructor() const { return GetMethod("~" + GetClassName()); }
 };
 
 // <memberdef kind="function">...</memberdef>
@@ -320,7 +325,7 @@ public:
     vector<string> GetTemplateParams() const { return ExtractTemplateParams(memberdef_); }
     bool IsDefine() const { return CONTAINS(SourceData::defines_, GetName()); }
     bool IsTemplate() const { return ::IsTemplate(memberdef_); }
-    string JoinParamsNames(bool skipContext = false) const { return ::JoinParamsNames(memberdef_, skipContext); }
+    string JoinParamsNames(bool skipContext = false) const { return ::JoinParamsNames(memberdef_, skipContext); } // TODO убрать skipContext, он больше не нужен
     string JoinParamsTypes() const { return ::JoinParamsTypes(memberdef_, specialization_); }
 
     virtual string GetLocation() const { return GetFunctionLocation(memberdef_); }
@@ -329,12 +334,12 @@ public:
 // <compounddef kind="class|struct">
 //     <sectiondef>
 //         <memberdef kind="function">...</memberdef>
-class ClassFunctionAnalyzer : public FunctionAnalyzer
+class MethodAnalyzer : public FunctionAnalyzer
 {
     ClassAnalyzer classAnalyzer_;
 
 public:
-    ClassFunctionAnalyzer(const ClassAnalyzer& classAnalyzer, xml_node memberdef, const TemplateSpecialization& specialization = {});
+    MethodAnalyzer(const ClassAnalyzer& classAnalyzer, xml_node memberdef, const TemplateSpecialization& specialization = {});
 
     ClassAnalyzer GetClass() const { return classAnalyzer_; }
 
@@ -347,7 +352,7 @@ public:
 
     // <memberdef>
     // <reimplements refid="..."></reimplements>
-    shared_ptr<ClassFunctionAnalyzer> Reimplements() const;
+    shared_ptr<MethodAnalyzer> Reimplements() const;
 
     string GetClassName() const { return classAnalyzer_.GetClassName(); }
     string GetContainsClassName() const; // May this function defined in parent class, so return name o class, real define this function
@@ -365,6 +370,7 @@ public:
     bool IsDeleted() const { return EndsWith(ExtractArgsstring(memberdef_), "=delete"); }
     bool IsConsversionOperator() const { return StartsWith(GetName(), "operator "); }
 
+    string GetDeclaration() const { return JoinNonEmpty({ classAnalyzer_.usingLocation_, GetFunctionDeclaration(memberdef_) }, " | "); }
     string GetLocation() const override { return JoinNonEmpty({ classAnalyzer_.usingLocation_, GetFunctionLocation(memberdef_) }, " | "); }
 };
 

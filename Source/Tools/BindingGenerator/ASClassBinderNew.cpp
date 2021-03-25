@@ -90,40 +90,63 @@ static bool IsDestructorRequired(const ClassAnalyzer& classAnalyzer)
     return true;
 }
 
-static void RegisterDefaultConstructor(const ClassAnalyzer& classAnalyzer, ProcessedClass& processedClass)
+// Iterate over overrided funcions
+static bool HaveMark(const MethodAnalyzer& methodAnalyzer, const string& mark)
 {
-    if (classAnalyzer.IsRefCounted())
+    if (Contains(methodAnalyzer.GetComment(), mark))
+        return true;
+
+    shared_ptr<MethodAnalyzer> reimplements = methodAnalyzer.Reimplements();
+
+    if (!reimplements)
+        return false;
+
+    return HaveMark(*reimplements, mark);
+}
+
+static void RegisterConstructor(const MethodAnalyzer& methodAnalyzer, ProcessedClass& processedClass)
+{
+    ClassAnalyzer classAnalyzer = methodAnalyzer.GetClass();
+
+    if (classAnalyzer.IsAbstract())
         return;
 
-    if (Contains(classAnalyzer.GetComment(), "FAKE_REF"))
-        return;
-
-    string className = classAnalyzer.GetClassName();
-    string wrapperName = className + "_Constructor";
-
-    shared_ptr<ClassMemberRegistration> result = make_shared<ClassMemberRegistration>();
-
-    result->name_ = className;
-
-    result->glue_ =
-        "static void " + wrapperName + "(" + className + "* ptr)\n"
-        "{\n"
-        "    new(ptr) " + className + "();\n"
-        "}\n";
-
-    result->registration_ = "engine->RegisterObjectBehaviour(\"" + className + "\", asBEHAVE_CONSTRUCT, \"void f()\", asFUNCTION(" + wrapperName + "), asCALL_CDECL_OBJFIRST);";
-
-    shared_ptr<ClassFunctionAnalyzer> defaultConstructor = classAnalyzer.GetDefinedThisDefaultConstructor();
-
-    if (defaultConstructor)
+    if (HaveMark(methodAnalyzer, "NO_BIND"))
     {
-        result->comment_ = defaultConstructor->GetLocation();
-        processedClass.defaultConstructor_ = result;
+        RegistrationError regError;
+        regError.comment_ = methodAnalyzer.GetDeclaration();
+        regError.message_ = "Not registered because have @nobind mark";
+        processedClass.unregisteredSpecialMethods_.push_back(regError);
+        return;
     }
-    else if (!classAnalyzer.HasThisConstructor() && IsConstructorRequired(classAnalyzer))
+
+    if (HaveMark(methodAnalyzer, "MANUAL_BIND"))
     {
-        result->comment_ = className + "::" + className + "() | Implicitly-declared";
-        processedClass.defaultConstructor_ = result;
+        RegistrationError regError;
+        regError.comment_ = methodAnalyzer.GetDeclaration();
+        regError.message_ = "Not registered because have @manualbind mark";
+        processedClass.unregisteredSpecialMethods_.push_back(regError);
+        return;
+    }
+
+    MemberRegistration result;
+    result.name_ = methodAnalyzer.GetName();
+    result.comment_ = methodAnalyzer.GetDeclaration();
+    
+    string asClassName = classAnalyzer.GetClassName();
+    string cppClassName = classAnalyzer.GetClassName();
+    vector<ParamAnalyzer> params = methodAnalyzer.GetParams();
+
+    if (params.empty()) // Default constructor
+    {
+        if (classAnalyzer.IsRefCounted() || Contains(classAnalyzer.GetComment(), "FAKE_REF"))
+            result.registration_ = "engine->RegisterObjectBehaviour(\"" + asClassName + "\", asBEHAVE_FACTORY, \"" + asClassName + "@+ f()\", asFUNCTION(ASCompatibleFactory<" + cppClassName + ">), AS_CALL_CDECL);";
+        else
+            result.registration_ = "engine->RegisterObjectBehaviour(\"" + asClassName + "\", asBEHAVE_CONSTRUCT, \"void f()\", asFUNCTION(ASCompatibleConstructor<" + cppClassName + ">), AS_CALL_CDECL_OBJFIRST);";
+
+        result.comment_ = methodAnalyzer.GetLocation(); // Rewrite comment
+        processedClass.defaultConstructor_ = make_shared<MemberRegistration>(result);
+        return;
     }
 }
 
@@ -138,23 +161,17 @@ static void RegisterDestructor(const ClassAnalyzer& classAnalyzer, ProcessedClas
     string className = classAnalyzer.GetClassName();
     string wrapperName = className + "_Destructor";
 
-    shared_ptr<ClassMemberRegistration> result = make_shared<ClassMemberRegistration>();
+    shared_ptr<MemberRegistration> result = make_shared<MemberRegistration>();
 
     result->name_ = "~" + className;
 
-    result->glue_ =
-        "static void " + wrapperName + "(" + className + "* ptr)\n"
-        "{\n"
-        "    ptr->~" + className + "();\n"
-        "}\n";
+    result->registration_ = "engine->RegisterObjectBehaviour(\"" + className + "\", asBEHAVE_DESTRUCT, \"void f()\", AS_DESTRUCTOR(" + className + "), AS_CALL_CDECL_OBJFIRST);";
 
-    result->registration_ = "engine->RegisterObjectBehaviour(\"" + className + "\", asBEHAVE_DESTRUCT, \"void f()\", asFUNCTION(" + wrapperName + "), asCALL_CDECL_OBJFIRST);";
-
-    shared_ptr<ClassFunctionAnalyzer> thisDestructor = classAnalyzer.GetDefinedThisDestructor();
+    shared_ptr<MethodAnalyzer> thisDestructor = classAnalyzer.GetDefinedThisDestructor();
 
     if (thisDestructor)
     {
-        result->comment_ = thisDestructor->GetLocation();
+        result->comment_ = thisDestructor->GetDeclaration();
         processedClass.destructor_ = result;
     }
     else if (!classAnalyzer.HasThisDestructor() && IsDestructorRequired(classAnalyzer))
@@ -164,11 +181,6 @@ static void RegisterDestructor(const ClassAnalyzer& classAnalyzer, ProcessedClas
     }
 }
 
-static void RegisterNonDefaultConstructor(const ClassFunctionAnalyzer& classFunctionAnalyzer, ProcessedClass& processedClass)
-{
-    processedClass.nonDefaultConstructors_.push_back(classFunctionAnalyzer.GetLocation());
-}
-
 static void ProcessClass(const ClassAnalyzer& classAnalyzer)
 {
     if (classAnalyzer.IsInternal())
@@ -176,10 +188,6 @@ static void ProcessClass(const ClassAnalyzer& classAnalyzer)
 
     // TODO: Remove
     if (classAnalyzer.IsTemplate())
-        return;
-
-    // TODO: Remove
-    if (classAnalyzer.IsAbstract() && !(classAnalyzer.IsRefCounted() || Contains(classAnalyzer.GetComment(), "FAKE_REF")))
         return;
 
     string header = classAnalyzer.GetHeaderFile();
@@ -193,11 +201,29 @@ static void ProcessClass(const ClassAnalyzer& classAnalyzer)
     processedClass.comment_ = classAnalyzer.GetLocation();
     processedClass.insideDefine_ = InsideDefine(header);
 
+    vector<MethodAnalyzer> methods = classAnalyzer.GetThisPublicMethods();
+    for (const MethodAnalyzer& method : methods)
+    {
+        if (method.IsThisConstructor())
+            RegisterConstructor(method, processedClass);
+    }
+
+    // CollectMembers()
+
+    if (classAnalyzer.IsAbstract() && !(classAnalyzer.IsRefCounted() || Contains(classAnalyzer.GetComment(), "FAKE_REF")))
+    {
+        processedClass.objectTypeRegistration_ = "// Not registered because value types can not be abstract";
+        processedClass.noBind_ = true;
+        Result::classes_.push_back(processedClass);
+        return;
+    }
+
     string classComment = classAnalyzer.GetComment();
 
     if (Contains(classComment, "NO_BIND"))
     {
         processedClass.objectTypeRegistration_ = "// Not registered because have @nobind mark";
+        processedClass.noBind_ = true;
         Result::classes_.push_back(processedClass);
         return;
     }
@@ -205,16 +231,37 @@ static void ProcessClass(const ClassAnalyzer& classAnalyzer)
     if (Contains(classComment, "MANUAL_BIND"))
     {
         processedClass.objectTypeRegistration_ = "// Not registered because have @manualbind mark";
+        processedClass.noBind_ = true;
         Result::classes_.push_back(processedClass);
         return;
     }
 
     RegisterObjectType(classAnalyzer, processedClass);
-    RegisterDefaultConstructor(classAnalyzer, processedClass);
 
-    vector<ClassFunctionAnalyzer> nonDefaultConstructors = classAnalyzer.GetThisNonDefaultConstructors();
-    for (const ClassFunctionAnalyzer& classFunctionAnalyzer : nonDefaultConstructors)
-        RegisterNonDefaultConstructor(classFunctionAnalyzer, processedClass);
+    vector<ClassAnalyzer> baseClasses = classAnalyzer.GetBaseClasses();
+    for (const ClassAnalyzer& baseClass : baseClasses)
+        processedClass.baseClassNames_.push_back(baseClass.GetClassName());
+
+    if (classAnalyzer.IsAbstract()) // Abstract refcounted type
+    {
+        Result::classes_.push_back(processedClass);
+        return;
+    }
+
+    if (!classAnalyzer.HasThisConstructor() && IsConstructorRequired(classAnalyzer))
+    {
+        shared_ptr<MemberRegistration> result = make_shared<MemberRegistration>();
+        string cppClassName = classAnalyzer.GetClassName();
+        string asClassName = classAnalyzer.GetClassName();
+
+        if (classAnalyzer.IsRefCounted() || Contains(classAnalyzer.GetComment(), "FAKE_REF"))
+            result->registration_ = "engine->RegisterObjectBehaviour(\"" + asClassName + "\", asBEHAVE_FACTORY, \"" + asClassName + "@+ f()\", asFUNCTION(ASCompatibleFactory<" + cppClassName + ">), AS_CALL_CDECL);";
+        else
+            result->registration_ = "engine->RegisterObjectBehaviour(\"" + asClassName + "\", asBEHAVE_CONSTRUCT, \"void f()\", asFUNCTION(ASCompatibleConstructor<" + cppClassName + ">), AS_CALL_CDECL_OBJFIRST);";
+
+        result->comment_ = cppClassName + "::" + cppClassName + "() | Implicitly-declared";
+        processedClass.defaultConstructor_ = result;
+    }
 
     RegisterDestructor(classAnalyzer, processedClass);
 

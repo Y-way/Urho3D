@@ -104,67 +104,70 @@ static vector<map<string, string>> GetSpecializations(const GlobalFunctionAnalyz
 
 static void BindGlobalFunction(const GlobalFunctionAnalyzer& functionAnalyzer)
 {
-    string declParams = "";
     vector<ParamAnalyzer> params = functionAnalyzer.GetParams();
     string outGlue;
 
     bool needWrapper = false;
 
-    vector<shared_ptr<FuncParamConv>> convertedParams;
+    vector<ConvertedVariable> convertedParams;
 
     ProcessedGlobalFunction processedGlobalFunction;
     processedGlobalFunction.name_ = functionAnalyzer.GetName();
     processedGlobalFunction.comment_ = functionAnalyzer.GetLocation();
     processedGlobalFunction.insideDefine_ = InsideDefine(functionAnalyzer.GetHeaderFile());
 
-    for (size_t i = 0; i < params.size(); i++)
+    for (const ParamAnalyzer& param : params)
     {
-        ParamAnalyzer param = params[i];
-        shared_ptr<FuncParamConv> conv = CppFunctionParamToAS(i, param);
-        if (!conv->success_)
+        ConvertedVariable conv;
+        
+        try
         {
-            processedGlobalFunction.registration_ = "// " + conv->errorMessage_;
+            conv = CppVariableToAS(param.GetType(), VariableUsage::FunctionParameter, param.GetDeclname(), param.GetDefval());
+        }
+        catch (const Exception& e)
+        {
+            processedGlobalFunction.registration_ = "// " + string(e.what());
             Result::globalFunctions_.push_back(processedGlobalFunction);
             return;
         }
 
-        if (declParams.length() > 0)
-            declParams += ", ";
-
-        declParams += conv->asDecl_;
-
-        if (conv->NeedWrapper())
+        if (conv.NeedWrapper())
             needWrapper = true;
 
         convertedParams.push_back(conv);
     }
 
-    shared_ptr<FuncReturnTypeConv> retConv = CppFunctionReturnTypeToAS(functionAnalyzer.GetReturnType());
-    if (!retConv->success_)
+    ConvertedVariable retConv;
+
+    try
     {
-        processedGlobalFunction.registration_ = "// " + GetLastErrorMessage();
+        retConv = CppVariableToAS(functionAnalyzer.GetReturnType(), VariableUsage::FunctionReturn);
+    }
+    catch (const Exception& e)
+    {
+        processedGlobalFunction.registration_ = "// " + string(e.what());
         Result::globalFunctions_.push_back(processedGlobalFunction);
         return;
     }
-    
-    if (retConv->needWrapper_)
+
+    if (retConv.NeedWrapper())
         needWrapper = true;
 
     if (needWrapper)
         processedGlobalFunction.glue_ = GenerateWrapper(functionAnalyzer, convertedParams, retConv);
 
-    string asReturnType = retConv->asReturnType_;
+    string asReturnType = retConv.asDeclaration_;
 
     string asFunctionName = functionAnalyzer.GetName();
 
-    string decl = asReturnType + " " + asFunctionName + "(" + declParams + ")";
+    string decl = asReturnType + " " + asFunctionName + "(" + JoinASDeclarations(convertedParams) + ")";
 
     processedGlobalFunction.registration_ = "engine->RegisterGlobalFunction(\"" + decl + "\", ";
 
     if (needWrapper)
-        processedGlobalFunction.registration_ += "asFUNCTION(" + GenerateWrapperName(functionAnalyzer) + "), asCALL_CDECL);";
+        processedGlobalFunction.registration_ += "AS_FUNCTION(" + GenerateWrapperName(functionAnalyzer) + "), AS_CALL_CDECL);";
     else
-        processedGlobalFunction.registration_ += Generate_asFUNCTIONPR(functionAnalyzer) + ", asCALL_CDECL);";
+        processedGlobalFunction.registration_ += Generate_asFUNCTIONPR(functionAnalyzer) + ", AS_CALL_CDECL);";
 
     Result::globalFunctions_.push_back(processedGlobalFunction);
 
@@ -175,14 +178,14 @@ static void BindGlobalFunction(const GlobalFunctionAnalyzer& functionAnalyzer)
     {
         asFunctionName = CutStart(aliasMark, "BIND_AS_ALIAS_");
 
-        decl = asReturnType + " " + asFunctionName + "(" + declParams + ")";
+        decl = asReturnType + " " + asFunctionName + "(" + JoinASDeclarations(convertedParams) + ")";
 
         processedGlobalFunction.registration_ = "engine->RegisterGlobalFunction(\"" + decl + "\", ";
 
         if (needWrapper)
-            processedGlobalFunction.registration_ += "asFUNCTION(" + GenerateWrapperName(functionAnalyzer) + "), asCALL_CDECL);";
+            processedGlobalFunction.registration_ += "AS_FUNCTION(" + GenerateWrapperName(functionAnalyzer) + "), AS_CALL_CDECL);";
         else
-            processedGlobalFunction.registration_ += Generate_asFUNCTIONPR(functionAnalyzer) + ", asCALL_CDECL);";
+            processedGlobalFunction.registration_ += Generate_asFUNCTIONPR(functionAnalyzer) + ", AS_CALL_CDECL);";
 
         Result::globalFunctions_.push_back(processedGlobalFunction);
     }

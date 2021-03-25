@@ -459,6 +459,9 @@ namespace Result
             if (!processedClass.defaultConstructor_)
                 continue;
 
+            if (processedClass.defaultConstructor_->glue_.empty())
+                continue;
+
             if (processedClass.insideDefine_ != openedDefine && !openedDefine.empty())
             {
                 ofs << "\n#endif\n";
@@ -494,6 +497,9 @@ namespace Result
         for (const ProcessedClass& processedClass : classes_)
         {
             if (!processedClass.defaultConstructor_)
+                continue;
+
+            if (processedClass.noBind_)
                 continue;
 
             if (processedClass.insideDefine_ != openedDefine && !openedDefine.empty())
@@ -539,6 +545,7 @@ namespace Result
             "#include \"../AngelScript/APITemplates.h\"\n"
             "\n"
             "#include \"../AngelScript/GeneratedIncludes.h\"\n"
+            "#include \"../AngelScript/GeneratedClassMembers.h\"\n"
             "#include \"../AngelScript/Manual.h\"\n"
             "\n"
             "namespace Urho3D\n"
@@ -551,6 +558,9 @@ namespace Result
         
         for (const ProcessedClass& processedClass : classes_)
         {
+            if (processedClass.noBind_)
+                continue;
+
             if (processedClass.insideDefine_ != openedDefine && !openedDefine.empty())
             {
                 ofs << "\n#endif // def " << openedDefine << "\n";
@@ -565,7 +575,7 @@ namespace Result
                 openedDefine = processedClass.insideDefine_;
             }
 
-            if (processedClass.destructor_)
+            if (processedClass.destructor_ && !processedClass.destructor_->glue_.empty())
             {
                 ofs <<
                     "// " << processedClass.destructor_->comment_ << "\n"
@@ -574,8 +584,23 @@ namespace Result
             }
 
             ofs <<
-                "static void Register" << processedClass.name_ << "(asIScriptEngine* engine)\n"
+                "// " << processedClass.comment_ << "\n"
+                "static void Register_" << processedClass.name_ << "(asIScriptEngine* engine)\n"
                 "{\n";
+
+            bool needGap = false;
+
+            for (const RegistrationError& regError : processedClass.unregisteredSpecialMethods_)
+            {
+                if (needGap)
+                    ofs << '\n';
+
+                ofs <<
+                    "    // " << regError.comment_ << "\n"
+                    "    // " << regError.message_ << "\n";
+
+                needGap = true;
+            }
 
             /*
             for (string nonDefaultConstructor : processedClass.nonDefaultConstructors_)
@@ -584,10 +609,25 @@ namespace Result
 
             if (processedClass.destructor_)
             {
+                if (needGap)
+                    ofs << '\n';
+
                 ofs <<
                     "    // " << processedClass.destructor_->comment_ << "\n"
                     "    " << processedClass.destructor_->registration_ << "\n";
+                
+                needGap = true;
             }
+
+            if (needGap)
+                ofs << '\n';
+
+            ofs <<
+                "    Vector<RegisterObjectMethodArgs> methods;\n"
+                "    CollectMembers_" << processedClass.name_ << "(methods);\n"
+                "    const char* asClassName = \"" << processedClass.name_ << "\";\n"
+                "    for (const RegisterObjectMethodArgs& method : methods)\n"
+                "        engine->RegisterObjectMethod(asClassName, method.declaration_.CString(), method.funcPointer_, method.callConv_);\n";
 
             ofs << "}\n";
 
@@ -608,6 +648,9 @@ namespace Result
 
         for (const ProcessedClass& processedClass : classes_)
         {
+            if (processedClass.noBind_)
+                continue;
+
             if (processedClass.insideDefine_ != openedDefine && !openedDefine.empty())
             {
                 ofs << "#endif\n";
@@ -623,7 +666,7 @@ namespace Result
                 openedDefine = processedClass.insideDefine_;
             }
 
-            ofs << "    Register" << processedClass.name_ << "(engine);\n";
+            ofs << "    Register_" << processedClass.name_ << "(engine);\n";
 
             isFirst = false;
         }
@@ -637,12 +680,182 @@ namespace Result
             "}\n";
     }
 
+    // Write result to GeneratedClassMembers.cpp and GeneratedClassMembers.h
+    static void SaveClassMembers(const string& outputBasePath)
+    {
+        ofstream ofsCpp(outputBasePath + "/Source/Urho3D/AngelScript/GeneratedClassMembers.cpp");
+
+        ofsCpp <<
+            "// DO NOT EDIT. This file is generated\n"
+            "\n"
+            "#include \"../Precompiled.h\"\n"
+            "#include \"../AngelScript/APITemplates.h\"\n"
+            "\n"
+            "#include \"../AngelScript/GeneratedIncludes.h\"\n"
+            "#include \"../AngelScript/GeneratedClassMembers.h\"\n"
+            "#include \"../AngelScript/Manual.h\"\n"
+            "\n"
+            "namespace Urho3D\n"
+            "{\n"
+            "\n"
+            "void FakeAddRef(void* ptr);\n"
+            "void FakeReleaseRef(void* ptr);\n";
+
+        string openedDefine;
+
+        for (const ProcessedClass& processedClass : classes_)
+        {
+            if (processedClass.insideDefine_ != openedDefine && !openedDefine.empty())
+            {
+                ofsCpp <<
+                    "\n"
+                    "#endif // def " << openedDefine << "\n";
+
+                openedDefine.clear();
+            }
+
+            if (processedClass.insideDefine_ != openedDefine && !processedClass.insideDefine_.empty())
+            {
+                ofsCpp <<
+                    "\n"
+                    "#ifdef " << processedClass.insideDefine_ << "\n";
+
+                openedDefine = processedClass.insideDefine_;
+            }
+
+            /*for (const ClassMethodRegistration& method : processedClass.methods_)
+            {
+                if (!method.glue_.empty())
+                {
+                    ofsCpp <<
+                        "\n"
+                        "// " << method.cppDeclaration_ << "\n"
+                        << method.glue_;
+                }
+            }*/
+
+            ofsCpp <<
+                "\n"
+                "// " << processedClass.comment_ << "\n"
+                "void CollectMembers_" << processedClass.name_ << "(Vector<RegisterObjectMethodArgs>& methods)\n"
+                "{\n";
+
+            bool needGap = false;
+
+            /*for (const RegistrationError& unregisteredMethod : processedClass.unregisteredMethods_)
+            {
+                if (needGap)
+                    ofsCpp << '\n';
+
+                ofsCpp <<
+                    "    // " << unregisteredMethod.cppDeclaration_ << "\n"
+                    "    // " << unregisteredMethod.message_ << "\n";
+
+                needGap = true;
+            }*/
+
+            if (processedClass.baseClassNames_.size())
+            {
+                if (needGap)
+                    ofsCpp << '\n';
+
+                for (const string& baseClassName : processedClass.baseClassNames_)
+                    ofsCpp << "    CollectMembers_" << baseClassName << "(methods);\n";
+
+                needGap = true;
+            }
+
+            /*for (const ClassMethodRegistration& method : processedClass.methods_)
+            {
+                if (needGap)
+                    ofsCpp << '\n';
+
+                const RegisterObjectMethodArgs& args = method.registration_;
+
+                ofsCpp <<
+                    "    // " << method.cppDeclaration_ << "\n"
+                    "    methods.Push(RegisterObjectMethodArgs(\"" << args.declaration_ << "\", " << args.funcPointer_ << ", " << args.callConv_ << "));\n";
+
+                needGap = true;
+            }*/
+
+            ofsCpp << "}\n";
+        }
+
+        if (!openedDefine.empty())
+        {
+            ofsCpp <<
+                "\n"
+                "#endif // def " << openedDefine << "\n";
+
+            openedDefine.clear();
+        }
+
+        ofsCpp <<
+            "\n"
+            "} // namespace Urho3D\n";
+
+        ofstream ofsH(outputBasePath + "/Source/Urho3D/AngelScript/GeneratedClassMembers.h");
+
+        ofsH <<
+            "// DO NOT EDIT. This file is generated\n"
+            "\n"
+            "#pragma once\n"
+            "\n"
+            "#include \"../AngelScript/APITemplates.h\"\n"
+            "\n"
+            "#include \"../AngelScript/GeneratedIncludes.h\"\n"
+            "\n"
+            "namespace Urho3D\n"
+            "{\n";
+
+        for (const ProcessedClass& processedClass : classes_)
+        {
+            if (processedClass.insideDefine_ != openedDefine && !openedDefine.empty())
+            {
+                ofsH <<
+                    "\n"
+                    "#endif // def " << openedDefine << "\n";
+
+                openedDefine.clear();
+            }
+
+            if (processedClass.insideDefine_ != openedDefine && !processedClass.insideDefine_.empty())
+            {
+                ofsH <<
+                    "\n"
+                    "#ifdef " << processedClass.insideDefine_ << "\n";
+
+                openedDefine = processedClass.insideDefine_;
+            }
+
+            ofsH <<
+                "\n"
+                "// " << processedClass.comment_ << "\n"
+                "void CollectMembers_" << processedClass.name_ << "(Vector<RegisterObjectMethodArgs>& methods);\n";
+        }
+
+        if (!openedDefine.empty())
+        {
+            ofsH <<
+                "\n"
+                "#endif // def " << openedDefine << "\n";
+
+            openedDefine.clear();
+        }
+
+        ofsH <<
+            "\n"
+            "} // namespace Urho3D\n";
+    }
+
     static void SaveClasses(const string& outputBasePath)
     {
         sort(classes_.begin(), classes_.end());
         SaveObjectTypes(outputBasePath);
         SaveDefaultConstructors(outputBasePath);
         SaveGeneratedClasses(outputBasePath);
+        SaveClassMembers(outputBasePath);
     }
 
     // ============================================================================

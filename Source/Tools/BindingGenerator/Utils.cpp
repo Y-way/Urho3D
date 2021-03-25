@@ -25,18 +25,6 @@
 #include <cassert>
 #include <sstream>
 
-static string _lastErrorMessage;
-
-string GetLastErrorMessage()
-{
-    return _lastErrorMessage;
-}
-
-void SetLastErrorMessage(const string& message)
-{
-    _lastErrorMessage = message;
-}
-
 string Trim(const string& str)
 {
     size_t trimStart = 0;
@@ -205,6 +193,11 @@ string CutEnd(const string& str, const string& value)
 bool Contains(const string& str, const string& substr)
 {
     return str.find(substr) != string::npos;
+}
+
+bool Contains(const string& str, char c)
+{
+    return str.find(c) != string::npos;
 }
 
 string FirstCharToLower(const string& str)

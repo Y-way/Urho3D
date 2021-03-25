@@ -147,6 +147,7 @@ cmake_dependent_option (IOS "Setup build for iOS platform" FALSE "XCODE" FALSE)
 cmake_dependent_option (TVOS "Setup build for tvOS platform" FALSE "XCODE" FALSE)
 cmake_dependent_option (URHO3D_64BIT "Enable 64-bit build, the default is set based on the native ABI of the chosen compiler toolchain" "${NATIVE_64BIT}" "NOT MSVC AND NOT ANDROID AND NOT (ARM AND NOT IOS) AND NOT WEB AND NOT POWERPC" "${NATIVE_64BIT}")     # Intentionally only enable the option for iOS but not for tvOS as the latter is 64-bit only
 option (URHO3D_ANGELSCRIPT "Enable AngelScript scripting support" TRUE)
+cmake_dependent_option (URHO3D_FORCE_AS_MAX_PORTABILITY "Use generic calling convention for AngelScript on any platform" FALSE "URHO3D_ANGELSCRIPT" FALSE)
 option (URHO3D_IK "Enable inverse kinematics support" TRUE)
 option (URHO3D_LUA "Enable additional Lua scripting support" TRUE)
 option (URHO3D_NAVIGATION "Enable navigation support" TRUE)
@@ -253,7 +254,9 @@ else ()
 endif ()
 cmake_dependent_option (URHO3D_PACKAGING "Enable resources packaging support" FALSE "NOT WEB" TRUE)
 # Enable profiling by default. If disabled, autoprofileblocks become no-ops and the Profiler subsystem is not instantiated.
-option (URHO3D_PROFILING "Enable profiling support" TRUE)
+option (URHO3D_PROFILING "Enable default profiling support" TRUE)
+# Extended "Tracy Profiler" based profiling. Disabled by default.
+option (URHO3D_TRACY_PROFILING "Enable extended profiling support using Tracy Profiler; overrides URHO3D_PROFILING option" FALSE)
 # Enable logging by default. If disabled, LOGXXXX macros become no-ops and the Log subsystem is not instantiated.
 option (URHO3D_LOGGING "Enable logging support" TRUE)
 # Enable threading by default, except for Emscripten because its thread support is yet experimental
@@ -387,6 +390,10 @@ if (EMSCRIPTEN)
     set (URHO3D_LIB_TYPE STATIC)
     unset (URHO3D_LIB_TYPE CACHE)
 endif ()
+if (URHO3D_TRACY_PROFILING)
+    set (URHO3D_PROFILING 0)
+    unset (URHO3D_PROFILING CACHE)
+endif ()
 
 # Union all the sysroot variables into one so it can be referred to generically later
 set (SYSROOT ${CMAKE_SYSROOT} ${MINGW_SYSROOT} ${IOS_SYSROOT} ${TVOS_SYSROOT} CACHE INTERNAL "Path to system root of the cross-compiling target")  # SYSROOT is empty for native build
@@ -417,7 +424,7 @@ if (URHO3D_CLANG_TOOLS)
             URHO3D_URHO2D)
         set (${OPT} 1)
     endforeach ()
-    foreach (OPT URHO3D_TESTING URHO3D_LUAJIT URHO3D_DATABASE_ODBC)
+    foreach (OPT URHO3D_TESTING URHO3D_LUAJIT URHO3D_DATABASE_ODBC URHO3D_TRACY_PROFILING)
         set (${OPT} 0)
     endforeach ()
 endif ()
@@ -470,6 +477,7 @@ foreach (OPT
         URHO3D_NETWORK
         URHO3D_PHYSICS
         URHO3D_PROFILING
+        URHO3D_TRACY_PROFILING
         URHO3D_THREADING
         URHO3D_URHO2D
         URHO3D_WEBP
@@ -903,6 +911,13 @@ macro (define_dependency_libs TARGET)
     if (${TARGET} MATCHES SLikeNet|Urho3D)
         if (WIN32)
             list (APPEND LIBS iphlpapi)
+        endif ()
+    endif ()
+
+    # ThirdParty/Tracy external dependency
+    if (${TARGET} MATCHES Tracy|Urho3D)
+        if (MINGW)
+            list (APPEND LIBS ws2_32 dbghelp advapi32 user32)
         endif ()
     endif ()
 
