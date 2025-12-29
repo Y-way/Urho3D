@@ -48,14 +48,14 @@ public:
     /// Destruct. Clean up self from event sender & receiver structures.
     ~Object() override;
 
-    /// Return type hash.
-    /// @property
-    virtual StringHash GetType() const = 0;
-    /// Return type name.
-    /// @property
-    virtual const String& GetTypeName() const = 0;
-    /// Return type info.
-    virtual const TypeInfo* GetTypeInfo() const = 0;
+    ///// Return type hash.
+    ///// @property
+    //virtual const StringHash GetType() const = 0;
+    ///// Return type name.
+    ///// @property
+    //virtual const String& GetTypeName() const = 0;
+    ///// Return type info.
+    //virtual const TypeInfo* GetTypeInfo() const = 0;
     /// Handle event.
     virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
     /// Subscribe to an event that can be sent by any sender.

@@ -65,7 +65,7 @@ class StringHash;
 public: \
     using ClassName = typeName; \
     using BaseClassName = baseTypeName; \
-    virtual const Urho3D::StringHash& GetType() const override { return GetTypeInfoStatic()->GetType(); } \
+    virtual const Urho3D::StringHash GetType() const override { return GetTypeInfoStatic()->GetType(); } \
     virtual const Urho3D::String& GetTypeName() const override { return GetTypeInfoStatic()->GetTypeName(); } \
     virtual const Urho3D::TypeInfo* GetTypeInfo() const override { return GetTypeInfoStatic(); } \
     virtual const Urho3D::StringHash GetBaseType() const { return GetBaseTypeStatic(); } \
@@ -97,7 +97,7 @@ public:
     RefCounted& operator =(const RefCounted& rhs) = delete;
 
     /// Return type hash.
-    virtual const StringHash& GetType() const = 0;
+    virtual const StringHash GetType() const = 0;
     /// Return type name.
     virtual const String& GetTypeName() const = 0;
     /// Return type info.
